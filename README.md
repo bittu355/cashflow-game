@@ -1,49 +1,73 @@
-# Cashflow: The Digital Blueprint
+# React + TypeScript + Vite
 
-A comprehensive digital deconstruction and implementation of the "CASHFLOW" board game by Robert Kiyosaki. This project aims to build a high-performance, cross-platform mobile application (iOS/Android) that captures the core financial education mechanics of the original game.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## 🚀 Vision
-To create a digital experience that teaches financial literacy through interactive gameplay, simulating real-life financial scenarios, investment opportunities, and the journey from the "Rat Race" to the "Fast Track."
+Currently, two official plugins are available:
 
-## 🎮 Game Mechanics
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-### 1. The Rat Race
-Players start as employees in various professions with set salaries, expenses, and debts. The goal is to build passive income that exceeds total expenses.
-- **Monthly Cashflow**: Tracking Income vs. Expenses.
-- **Opportunities**: Small Deals and Big Deals.
-- **Market Cards**: Events that affect the economy and asset prices.
-- **Doodads**: Unforeseen expenses that test financial resilience.
+## React Compiler
 
-### 2. The Fast Track
-Once passive income exceeds expenses, the player moves to the Fast Track—the playground of the rich.
-- **High-Stakes Investments**: Large-scale business buyouts and real estate.
-- **Dreams**: Achieving the player's predefined life goal.
-- **Cash Flow Requirement**: Winning by reaching $50,000+ in monthly cash flow from Fast Track investments.
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### 3. Financial Accounting Logic
-A robust accounting engine handles:
-- **Balance Sheets**: Assets (Real Estate, Stocks, Businesses) vs. Liabilities (Mortgages, Loans).
-- **Income Statements**: Passive Income, Earned Income, and detailed Expense tracking.
-- **Automated Calculation**: Real-time updates to cash flow based on player decisions.
+## Expanding the ESLint configuration
 
-### 4. Player Progression
-- **Professions**: Varied starting points (Doctor, Janitor, Teacher, etc.).
-- **Strategy Selection**: Choosing between high-growth stocks or cash-flowing real estate.
-- **Risk Management**: Handling "Downsized" scenarios and "New Child" expenses.
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-## 🛠 Technical Architecture (Planned)
-- **Frontend**: Cross-platform framework (e.g., Flutter or React Native) for iOS/Android.
-- **Logic Engine**: Pure TypeScript/JavaScript core for game rules and accounting.
-- **State Management**: Robust state handling for complex financial data.
-- **Backend**: Real-time multiplayer support and cloud saves.
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-## 📋 Roadmap
-- [x] Initial Project Setup & Repository Creation
-- [ ] Core Financial Engine Implementation
-- [ ] Game Loop & Turn Management
-- [ ] UI/UX Design (Premium Aesthetics)
-- [ ] Multiplayer Integration
-- [ ] Beta Testing & Launch
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
----
-*Inspired by Rich Dad Poor Dad and the original CASHFLOW game.*
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
