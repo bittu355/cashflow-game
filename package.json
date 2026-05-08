@@ -1,0 +1,17 @@
+{
+  "name": "cashflow-game",
+  "version": "1.0.0",
+  "description": "Digital version of the Cashflow board game.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cashflow",
+    "game",
+    "financial-literacy"
+  ],
+  "author": "bittu355",
+  "license": "MIT"
+}
