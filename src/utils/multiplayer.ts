@@ -11,22 +11,31 @@ let isSyncingFromFirebase = false;
 export const generateGameId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
 /**
+ * Cleans the state for Firebase storage (removing non-serializable parts)
+ */
+const getCleanState = (state: any) => {
+  return {
+    players: state.players || [],
+    currentPlayerIndex: state.currentPlayerIndex || 0,
+    turnPhase: state.turnPhase || 'ROLL',
+    diceRoll: state.diceRoll || [],
+    activeCard: state.activeCard || null,
+    pendingPaydays: state.pendingPaydays || 0,
+    winner: state.winner || null,
+    history: state.history || [],
+    turnCount: state.turnCount || 0,
+    activeMacroEvent: state.activeMacroEvent || null
+  };
+};
+
+/**
  * Initializes a new multiplayer game in Firebase.
  */
 export const createMultiplayerGame = async (gameId: string) => {
   const initialState = useGameStore.getState();
   const gameRef = ref(db, `games/${gameId}`);
   
-  // Strip out functions from the state before saving to Firebase
-  const cleanState = JSON.parse(JSON.stringify({
-    players: initialState.players,
-    currentPlayerIndex: initialState.currentPlayerIndex,
-    turnPhase: initialState.turnPhase,
-    diceRoll: initialState.diceRoll,
-    activeCard: initialState.activeCard,
-    pendingPaydays: initialState.pendingPaydays
-  }));
-
+  const cleanState = getCleanState(initialState);
   await set(gameRef, cleanState);
   joinMultiplayerGame(gameId);
 };
@@ -48,12 +57,11 @@ export const joinMultiplayerGame = (gameId: string) => {
       isSyncingFromFirebase = true;
       useGameStore.setState((state) => ({
         ...state,
-        players: data.players || [],
-        currentPlayerIndex: data.currentPlayerIndex || 0,
-        turnPhase: data.turnPhase || 'ROLL',
-        diceRoll: data.diceRoll || [],
-        activeCard: data.activeCard || null,
-        pendingPaydays: data.pendingPaydays || 0
+        ...data,
+        // Ensure we don't accidentally wipe out local-only state if it's missing from Firebase
+        players: data.players || state.players,
+        currentPlayerIndex: typeof data.currentPlayerIndex === 'number' ? data.currentPlayerIndex : state.currentPlayerIndex,
+        history: data.history || state.history,
       }));
       // Reset the flag on the next tick
       setTimeout(() => {
@@ -67,22 +75,12 @@ export const joinMultiplayerGame = (gameId: string) => {
 
 /**
  * Pushes local state changes to Firebase.
- * This should be called by Zustand whenever the state changes locally (but NOT when syncing FROM Firebase).
  */
 export const pushStateToFirebase = (state: GameState) => {
   if (!currentGameId || isSyncingFromFirebase) return;
 
   const gameRef = ref(db, `games/${currentGameId}`);
-  
-  const cleanState = {
-    players: state.players,
-    currentPlayerIndex: state.currentPlayerIndex,
-    turnPhase: state.turnPhase,
-    diceRoll: state.diceRoll,
-    activeCard: state.activeCard,
-    pendingPaydays: state.pendingPaydays
-  };
-
+  const cleanState = getCleanState(state);
   set(gameRef, cleanState);
 };
 

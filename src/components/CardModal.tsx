@@ -1,9 +1,10 @@
-import type { Asset } from '../types/game';
+import { useState } from 'react';
+import { useGameStore } from '../store/gameStore';
+import type { Asset, Player } from '../types/game';
 import { getEventTip } from '../data/tips';
-import { gameAudio } from '../utils/audio';
 
 export const CardModal = () => {
-  const { activeCard, players, currentPlayerIndex, resolveCard, buyAsset, sellAsset, handleMarketEvent, transferDeal } = useGameStore();
+  const { activeCard, players, currentPlayerIndex, resolveCard, buyAsset, sellAsset, handleMarketEvent, transferDeal, payCash, myPlayerId } = useGameStore();
   const [sharesToBuy, setSharesToBuy] = useState(10);
   const [showPeerTrade, setShowPeerTrade] = useState(false);
   const [targetPlayerId, setTargetPlayerId] = useState('');
@@ -13,14 +14,7 @@ export const CardModal = () => {
 
   if (!activeCard || !player) return null;
 
-  const eligibleAssets = player.statement.assets.filter(a => {
-    if (!activeCard.assetType) return false;
-    if (activeCard.assetType === 'REAL_ESTATE') {
-      // Logic for matching specific RE types (e.g. 3Br/2Ba)
-      return a.type === 'REAL_ESTATE' && activeCard.description.includes(a.name.split(' ')[0]); 
-    }
-    return a.type === activeCard.assetType;
-  });
+  // No-op - removed unused eligibleAssets logic
 
   const handleTrade = () => {
     if (!targetPlayerId) return;
@@ -41,39 +35,59 @@ export const CardModal = () => {
     }
 
     // Find ALL players with eligible assets (for Global Market Events)
-    const playersWithAssets = players.map(p => ({
+    const playersWithAssets = players.map((p: any) => ({
       player: p,
-      assets: p.statement.assets.filter(a => {
+      assets: p.statement.assets.filter((a: any) => {
         if (!activeCard.assetType) return false;
         if (activeCard.assetType === 'REAL_ESTATE') {
           return a.type === 'REAL_ESTATE' && activeCard.description.toLowerCase().includes(a.name.split(' ')[0].toLowerCase());
         }
         return a.type === activeCard.assetType && (activeCard.title.includes(a.name) || a.name.includes(activeCard.title.split(' ')[0]));
       })
-    })).filter(entry => entry.assets.length > 0);
+    })).filter((entry: any) => entry.assets.length > 0);
 
     return (
       <div className="market-resolution">
         <label className="pencil-text">Market Opportunity:</label>
-        {playersWithAssets.length > 0 ? playersWithAssets.map(entry => (
+        {playersWithAssets.length > 0 ? playersWithAssets.map((entry: any) => (
           <div key={entry.player.id} className="player-market-group">
             <div className="player-name-small" style={{ color: entry.player.color }}>{entry.player.name}'s Assets:</div>
-            {entry.assets.map(a => (
-              <div key={a.id} className="asset-sell-row">
-                <span>{a.name}</span>
-                <button className="btn btn-success small" onClick={() => {
-                  const price = activeCard.title.includes('3x') ? a.cost * 3 : activeCard.cost!;
-                  sellAsset(entry.player.id, a.id, price);
-                  // Don't resolve card yet, others might want to sell
-                }}>
-                  Sell for ${ (activeCard.title.includes('3x') ? a.cost * 3 : activeCard.cost!).toLocaleString() }
-                </button>
-              </div>
-            ))}
+            {entry.assets.map((a: Asset) => {
+              const calculatePrice = () => {
+                let price = activeCard.cost || 0;
+                if (activeCard.description.toLowerCase().includes('per unit')) {
+                  const unitMatch = a.name.match(/(\d+)\s*Unit/i);
+                  if (unitMatch) price = price * parseInt(unitMatch[1]);
+                } else if (activeCard.title.includes('3x')) {
+                  price = a.cost * 3;
+                } else if (a.type === 'STOCK') {
+                  price = price * (a.shares || 0);
+                }
+                return price;
+              };
+              const price = calculatePrice();
+              const isOwner = myPlayerId === 'LOCAL' || entry.player.id === myPlayerId;
+
+              return (
+                <div key={a.id} className="asset-sell-row">
+                  <span>{a.name}</span>
+                  <button 
+                    className="btn btn-success small" 
+                    disabled={!isOwner}
+                    onClick={() => {
+                      sellAsset(entry.player.id, a.id, price);
+                      if (activeCard.assetType !== 'STOCK') resolveCard(); 
+                    }}
+                  >
+                    {isOwner ? `Sell for $${price.toLocaleString()}` : 'Owner Action'}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )) : <p className="pencil-text small">No one has matching assets.</p>}
         <button className="btn btn-secondary" style={{ width: '100%', marginTop: '1rem' }} onClick={resolveCard}>Done</button>
-        <style jsx>{`
+        <style>{`
           .player-market-group { margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; }
           .player-name-small { font-size: 0.75rem; font-weight: 800; margin-bottom: 0.3rem; text-transform: uppercase; }
         `}</style>
@@ -118,8 +132,17 @@ export const CardModal = () => {
         <div className="card-actions">
           {activeCard.type === 'MARKET' ? renderMarketAction() : (
             <>
-              <button className="btn btn-secondary flex-1" onClick={resolveCard}>
-                {activeCard.type === 'DOODAD' ? 'Pay' : 'Pass'}
+              <button 
+                className="btn btn-secondary flex-1" 
+                disabled={activeCard.type === 'DOODAD' && player.statement.cash < (activeCard.cost || 0)}
+                onClick={() => {
+                  if (activeCard.type === 'DOODAD') {
+                    payCash(player.id, activeCard.cost || 0); 
+                  }
+                  resolveCard();
+                }}
+              >
+                {activeCard.type === 'DOODAD' ? `Pay $${(activeCard.cost || 0).toLocaleString()}` : 'Pass'}
               </button>
               
               <button 
@@ -158,7 +181,7 @@ export const CardModal = () => {
               <div className="trade-controls animate-fade-in">
                 <select value={targetPlayerId} onChange={e => setTargetPlayerId(e.target.value)}>
                   <option value="">Select Player...</option>
-                  {players.filter(p => p.id !== player.id).map(p => (
+                  {players.filter((p: Player) => p.id !== player.id).map((p: Player) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
@@ -195,7 +218,7 @@ export const CardModal = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .modal-overlay {
           position: fixed; top: 0; left: 0; right: 0; bottom: 0;
           background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);

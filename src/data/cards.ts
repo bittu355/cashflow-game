@@ -79,7 +79,12 @@ export const MARKET: GameCard[] = [
   { id: 'm_7', type: 'MARKET', title: 'MYT4U Stock Split', description: 'Tech giant MYT4U splits 2-for-1! Everyone doubles their shares.', cost: 0, actionText: 'Execute Split', isGlobal: true, marketEvent: { type: 'STOCK_SPLIT', symbol: 'MYT4U' } },
   { id: 'm_8', type: 'MARKET', title: 'OK4U Reverse Split', description: 'OK4U struggles. 1-for-10 reverse split. Everyone loses 90% of shares.', cost: 0, actionText: 'Execute Split', isGlobal: true, marketEvent: { type: 'REVERSE_SPLIT', symbol: 'OK4U' } },
   { id: 'm_9', type: 'MARKET', title: 'Plex Buyers', description: 'Demand for 4-Plexes. Sell any 4-Unit Apartment for $200,000.', cost: 200000, assetType: 'REAL_ESTATE', actionText: 'Sell Asset' },
-  { id: 'm_10', type: 'MARKET', title: 'ON2U Stock Surges', description: 'Hit movie release! Everyone may sell ON2U shares for $40.', cost: 40, assetType: 'STOCK', actionText: 'Execute Sale', isGlobal: true }
+  { id: 'm_10', type: 'MARKET', title: 'ON2U Stock Surges', description: 'Hit movie release! Everyone may sell ON2U shares for $40.', cost: 40, assetType: 'STOCK', actionText: 'Execute Sale', isGlobal: true },
+  { id: 'm_11', type: 'MARKET', title: 'Shopping Mall Expansion', description: 'Major retailer seeks space. You may sell any Shopping Mall for $1,200,000.', cost: 1200000, assetType: 'BUSINESS', actionText: 'Sell Mall' },
+  { id: 'm_12', type: 'MARKET', title: 'Car Wash Franchise Buyer', description: 'Regional chain acquiring local car washes. Sell for $150,000.', cost: 150000, assetType: 'BUSINESS', actionText: 'Sell Car Wash' },
+  { id: 'm_13', type: 'MARKET', title: 'Luxury Condo Buyer', description: 'Foreign investment group buying condos. Sell for $120,000.', cost: 120000, assetType: 'REAL_ESTATE', actionText: 'Sell Condo' },
+  { id: 'm_14', type: 'MARKET', title: 'MYT4U Stock Crash', description: 'Scandal hits tech giant. Everyone must sell MYT4U for $1.', cost: 1, assetType: 'STOCK', actionText: 'Liquidate', isGlobal: true },
+  { id: 'm_15', type: 'MARKET', title: 'Apartment House Buyout', description: 'New development planned. You may sell any Apartment House for $50,000 per unit.', cost: 50000, assetType: 'REAL_ESTATE', actionText: 'Sell Asset' }
 ];
 
 export const ALL_CARDS = { SMALL_DEALS, BIG_DEALS, DOODADS, MARKET };

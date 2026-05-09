@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 
 export const FinancialControls = () => {
-  const { players, currentPlayerIndex, borrowMoney, payLoan, turnPhase } = useGameStore();
+  const { players, currentPlayerIndex, borrowMoney, payLoan } = useGameStore();
   const player = players[currentPlayerIndex];
   const [loanAmount, setLoanAmount] = useState(1000);
 
@@ -60,7 +60,7 @@ export const FinancialControls = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .financial-controls {
           padding: 1.5rem;
           margin-top: 1rem;

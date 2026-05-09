@@ -5,10 +5,12 @@ export interface FastTrackSpace {
   type: FastTrackSpaceType;
   label: string;
   color: string;
+  dreamId?: string;
   business?: {
     name: string;
     cost: number;
     cashflow: number;
+    requiredRoll?: number;
   };
 }
 
@@ -32,41 +34,41 @@ export const DREAMS: Dream[] = [
 
 export const FAST_TRACK_SPACES: FastTrackSpace[] = [
   { id: 0, type: 'CASHFLOW_DAY', label: 'Cashflow Day', color: '#ffd700' },
-  { id: 1, type: 'BUSINESS', label: 'Software Co.', color: '#28a745', business: { name: 'Software Co.', cost: 150000, cashflow: 5000 } },
-  { id: 2, type: 'DREAM', label: 'Dream', color: '#e83e8c' },
+  { id: 1, type: 'BUSINESS', label: 'Software Co.', color: '#28a745', business: { name: 'Software Co.', cost: 150000, cashflow: 5000, requiredRoll: 4 } },
+  { id: 2, type: 'DREAM', label: 'Dream', color: '#e83e8c', dreamId: 'dream_jet' },
   { id: 3, type: 'BUSINESS', label: 'Laundromat', color: '#28a745', business: { name: 'Laundromat', cost: 50000, cashflow: 1500 } },
   { id: 4, type: 'CASHFLOW_DAY', label: 'Cashflow Day', color: '#ffd700' },
   { id: 5, type: 'TAX_AUDIT', label: 'Tax Audit', color: '#dc3545' },
   { id: 6, type: 'BUSINESS', label: 'Car Wash', color: '#28a745', business: { name: 'Car Wash', cost: 75000, cashflow: 2500 } },
-  { id: 7, type: 'DREAM', label: 'Dream', color: '#e83e8c' },
-  { id: 8, type: 'BUSINESS', label: 'Burger Chain', color: '#28a745', business: { name: 'Burger Chain', cost: 300000, cashflow: 10000 } },
+  { id: 7, type: 'DREAM', label: 'Dream', color: '#e83e8c', dreamId: 'dream_mayor' },
+  { id: 8, type: 'BUSINESS', label: 'Burger Chain', color: '#28a745', business: { name: 'Burger Chain', cost: 300000, cashflow: 10000, requiredRoll: 5 } },
   { id: 9, type: 'CHARITY', label: 'Charity', color: '#17a2b8' },
   { id: 10, type: 'CASHFLOW_DAY', label: 'Cashflow Day', color: '#ffd700' },
   { id: 11, type: 'BUSINESS', label: 'Apartments', color: '#28a745', business: { name: 'Apartment Complex', cost: 200000, cashflow: 6000 } },
-  { id: 12, type: 'DREAM', label: 'Dream', color: '#e83e8c' },
+  { id: 12, type: 'DREAM', label: 'Dream', color: '#e83e8c', dreamId: 'dream_island' },
   { id: 13, type: 'DIVORCE', label: 'Divorce', color: '#dc3545' },
   { id: 14, type: 'BUSINESS', label: 'Storage Units', color: '#28a745', business: { name: 'Storage Units', cost: 100000, cashflow: 3000 } },
   { id: 15, type: 'CASHFLOW_DAY', label: 'Cashflow Day', color: '#ffd700' },
-  { id: 16, type: 'DREAM', label: 'Dream', color: '#e83e8c' },
+  { id: 16, type: 'DREAM', label: 'Dream', color: '#e83e8c', dreamId: 'dream_rainforest' },
   { id: 17, type: 'BUSINESS', label: 'Pizza Franchise', color: '#28a745', business: { name: 'Pizza Franchise', cost: 120000, cashflow: 4000 } },
   { id: 18, type: 'CHARITY', label: 'Charity', color: '#17a2b8' },
   { id: 19, type: 'CASHFLOW_DAY', label: 'Cashflow Day', color: '#ffd700' },
   { id: 20, type: 'BUSINESS', label: 'Marina', color: '#28a745', business: { name: 'Marina', cost: 250000, cashflow: 8000 } },
-  { id: 21, type: 'DREAM', label: 'Dream', color: '#e83e8c' },
+  { id: 21, type: 'DREAM', label: 'Dream', color: '#e83e8c', dreamId: 'dream_yacht' },
   { id: 22, type: 'LAWSUIT', label: 'Lawsuit', color: '#dc3545' },
-  { id: 23, type: 'BUSINESS', label: 'Shopping Mall', color: '#28a745', business: { name: 'Shopping Mall', cost: 500000, cashflow: 15000 } },
+  { id: 23, type: 'BUSINESS', label: 'Shopping Mall', color: '#28a745', business: { name: 'Shopping Mall', cost: 500000, cashflow: 15000, requiredRoll: 6 } },
   { id: 24, type: 'CASHFLOW_DAY', label: 'Cashflow Day', color: '#ffd700' },
-  { id: 25, type: 'DREAM', label: 'Dream', color: '#e83e8c' },
-  { id: 26, type: 'BUSINESS', label: 'Gold Mine', color: '#28a745', business: { name: 'Gold Mine', cost: 400000, cashflow: 12000 } },
+  { id: 25, type: 'DREAM', label: 'Dream', color: '#e83e8c', dreamId: 'dream_panda' },
+  { id: 26, type: 'BUSINESS', label: 'Gold Mine', color: '#28a745', business: { name: 'Gold Mine', cost: 400000, cashflow: 12000, requiredRoll: 4 } },
   { id: 27, type: 'CHARITY', label: 'Charity', color: '#17a2b8' },
   { id: 28, type: 'BUSINESS', label: 'Auto Dealer', color: '#28a745', business: { name: 'Auto Dealer', cost: 180000, cashflow: 5000 } },
   { id: 29, type: 'CASHFLOW_DAY', label: 'Cashflow Day', color: '#ffd700' },
-  { id: 30, type: 'DREAM', label: 'Dream', color: '#e83e8c' },
+  { id: 30, type: 'DREAM', label: 'Dream', color: '#e83e8c', dreamId: 'dream_space' },
   { id: 31, type: 'TAX_AUDIT', label: 'Tax Audit', color: '#dc3545' },
-  { id: 32, type: 'BUSINESS', label: 'BioTech StartUp', color: '#28a745', business: { name: 'BioTech StartUp', cost: 350000, cashflow: 10000 } },
+  { id: 32, type: 'BUSINESS', label: 'BioTech StartUp', color: '#28a745', business: { name: 'BioTech StartUp', cost: 350000, cashflow: 10000, requiredRoll: 5 } },
   { id: 33, type: 'CASHFLOW_DAY', label: 'Cashflow Day', color: '#ffd700' },
-  { id: 34, type: 'DREAM', label: 'Dream', color: '#e83e8c' },
-  { id: 35, type: 'BUSINESS', label: 'Oil Well', color: '#28a745', business: { name: 'Oil Well', cost: 220000, cashflow: 7000 } },
+  { id: 34, type: 'DREAM', label: 'Dream', color: '#e83e8c', dreamId: 'dream_golf' },
+  { id: 35, type: 'BUSINESS', label: 'Oil Well', color: '#28a745', business: { name: 'Oil Well', cost: 220000, cashflow: 7000, requiredRoll: 4 } },
   { id: 36, type: 'CHARITY', label: 'Charity', color: '#17a2b8' },
-  { id: 37, type: 'BUSINESS', label: 'Pro Sports Team', color: '#28a745', business: { name: 'Pro Sports Team', cost: 1000000, cashflow: 25000 } }
+  { id: 37, type: 'BUSINESS', label: 'Pro Sports Team', color: '#28a745', business: { name: 'Pro Sports Team', cost: 1000000, cashflow: 25000, requiredRoll: 6 } }
 ];

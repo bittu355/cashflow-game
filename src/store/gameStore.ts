@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { GameState, Player, Profession, Asset } from '../types/game';
+import type { GameState, Player, Profession, Asset, Liability } from '../types/game';
 import { recalculateStatement } from '../utils/finance';
 import { SMALL_DEALS, BIG_DEALS, DOODADS, MARKET } from '../data/cards';
-import { FAST_TRACK_SPACES, DREAMS } from '../data/fastTrack';
+import { FAST_TRACK_SPACES } from '../data/fastTrack';
+import { RAT_RACE_SPACES } from '../data/board';
 import { gameAudio } from '../utils/audio';
 
 const initialPlayers: Player[] = [];
@@ -23,6 +24,8 @@ export const useGameStore = create<GameState>()(
       lastAIAction: null,
       turnCount: 0,
       activeMacroEvent: null,
+      myPlayerId: null,
+      setMyPlayerId: (id) => set({ myPlayerId: id }),
 
       setRolling: (rolling) => set({ isRolling: rolling }),
       setAIAction: (action) => set({ lastAIAction: action }),
@@ -36,9 +39,9 @@ export const useGameStore = create<GameState>()(
         }));
       },
 
-      addPlayer: (name: string, color: string, profession: Profession, dreamId: string = 'yacht', isBot: boolean = false) => {
+      addPlayer: (name: string, color: string, profession: Profession, dreamId: string = 'yacht', isBot: boolean = false, customId?: string) => {
         const newPlayer: Player = {
-          id: `player-${Date.now()}`,
+          id: customId || `player-${Date.now()}-${Math.random()}`,
           name,
           color,
           profession,
@@ -49,6 +52,7 @@ export const useGameStore = create<GameState>()(
           lostTurns: 0,
           fastTrackCashflow: 0,
           fastTrackTarget: 0,
+          fastTrackBusinesses: [],
           hasBoughtDream: false,
           charityTurnsRemaining: 0,
           isBot,
@@ -92,6 +96,7 @@ export const useGameStore = create<GameState>()(
         // Validation: Charity allows up to 2 dice, Fast Track allows up to 3, normal is 1
         const rolls = Array.from({ length: numDice }, () => Math.floor(Math.random() * 6) + 1);
         const totalRoll = rolls.reduce((sum, val) => sum + val, 0);
+        gameAudio.playSFX('dice');
 
         set((state) => {
           const currentPlayer = state.players[state.currentPlayerIndex];
@@ -187,19 +192,21 @@ export const useGameStore = create<GameState>()(
           let nextPlayerIndex = (state.currentPlayerIndex + 1) % Math.max(state.players.length, 1);
           let players = [...state.players];
 
-          // Skip bankrupt players and decrement their lostTurns
+          // Skip players with lostTurns or who are bankrupt (bankrupt is a subcase of lostTurns usually)
           let attempts = 0;
-          while (players[nextPlayerIndex]?.isBankrupt && attempts < players.length) {
+          while (players[nextPlayerIndex]?.lostTurns > 0 && attempts < players.length) {
             players[nextPlayerIndex] = {
               ...players[nextPlayerIndex],
               lostTurns: players[nextPlayerIndex].lostTurns - 1
             };
             
+            // If they are no longer lost, but still marked bankrupt, clear bankruptcy
             if (players[nextPlayerIndex].lostTurns <= 0) {
               players[nextPlayerIndex].isBankrupt = false;
-            } else {
-              nextPlayerIndex = (nextPlayerIndex + 1) % Math.max(state.players.length, 1);
             }
+            
+            // Still skip them for this turn as we just decremented it
+            nextPlayerIndex = (nextPlayerIndex + 1) % Math.max(state.players.length, 1);
             attempts++;
           }
 
@@ -372,48 +379,17 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      declareBankruptcy: (playerId: string) => {
+
+      payCash: (playerId: string, amount: number) => {
         set((state) => {
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
-
-            // 1. Sell all assets for 1/2 of their down payment (High Fidelity Rule)
-            let cashGenerated = 0;
-            p.statement.assets.forEach(asset => {
-              cashGenerated += (asset.downPayment / 2);
-            });
-
-            let newCash = p.statement.cash + cashGenerated;
-            let remainingLiabilities = [...p.statement.liabilities];
-
-            // 2. Clear all bank loans if possible
-            const currentBankLoan = p.statement.liabilities.find(l => l.id === 'bank_loan');
-            if (currentBankLoan && newCash >= 1000) {
-              const affordablePayoff = Math.floor(newCash / 1000) * 1000;
-              const actualPayoff = Math.min(affordablePayoff, currentBankLoan.amount);
-              newCash -= actualPayoff;
-              
-              if (actualPayoff === currentBankLoan.amount) {
-                remainingLiabilities = remainingLiabilities.filter(l => l.id !== 'bank_loan');
-              } else {
-                remainingLiabilities = remainingLiabilities.map(l => 
-                  l.id === 'bank_loan' ? { ...l, amount: l.amount - actualPayoff, payment: l.payment - (actualPayoff * 0.1) } : l
-                );
-              }
-            }
-
-            const draftStatement = {
-              ...p.statement,
-              cash: newCash,
-              assets: [], 
-              liabilities: remainingLiabilities
-            };
-
             return {
               ...p,
-              isBankrupt: true,
-              lostTurns: 3,
-              statement: recalculateStatement(draftStatement, p.profession)
+              statement: {
+                ...p.statement,
+                cash: Math.max(0, p.statement.cash - amount)
+              }
             };
           });
           return { players };
@@ -464,21 +440,22 @@ export const useGameStore = create<GameState>()(
             
             // Fast track target = Day Job Passive Income + $50,000
             const startingPassive = p.statement.passiveIncome;
-            const target = startingPassive + 50000;
+            const ftIncome = startingPassive * 100;
+            const target = ftIncome + 50000;
             
-            // Give them 100x their passive income in cash to start fast track
-            const fastTrackStartingCash = startingPassive * 100;
+            // Give them 1x their new FT income in cash to start (classic rule variation)
+            const fastTrackStartingCash = ftIncome;
             
             return {
               ...p,
               phase: 'FAST_TRACK' as const,
-              position: 0, // Reset board position for fast track board
-              fastTrackCashflow: startingPassive,
+              position: 0,
+              fastTrackCashflow: 0, // Incremental cashflow starts at 0
               fastTrackTarget: target,
               statement: {
                 ...p.statement,
                 cash: p.statement.cash + fastTrackStartingCash,
-                fastTrackStartingIncome: startingPassive
+                fastTrackStartingIncome: ftIncome
               }
             };
           });
@@ -486,57 +463,7 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      buyDream: (playerId: string) => {
-        set((state) => {
-          let winner = state.winner;
-          const players = state.players.map(p => {
-            if (p.id !== playerId) return p;
-            const dream = DREAMS.find(d => d.id === p.dreamId);
-            const cost = dream ? dream.cost : 50000; 
-            
-            if (p.statement.cash < cost) return p;
-            
-            winner = p.name; // First to buy their dream wins!
-            
-            return {
-              ...p,
-              hasBoughtDream: true,
-              statement: {
-                ...p.statement,
-                cash: p.statement.cash - cost
-              }
-            };
-          });
-          gameAudio.playSFX('win');
-          return { players, winner };
-        });
-      },
 
-      buyFastTrackBusiness: (playerId: string, cashflowIncrease: number, cost: number) => {
-        set((state) => {
-          let winner = state.winner;
-          const players = state.players.map(p => {
-            if (p.id !== playerId) return p;
-            if (p.statement.cash < cost) return p;
-            
-            const newCashflow = p.fastTrackCashflow + cashflowIncrease;
-            if (newCashflow >= p.fastTrackTarget) {
-              winner = p.name; // Alternate win condition
-            }
-            
-            return {
-              ...p,
-              fastTrackCashflow: newCashflow,
-              statement: {
-                ...p.statement,
-                cash: p.statement.cash - cost
-              }
-            };
-          });
-          gameAudio.playSFX('cash');
-          return { players, winner };
-        });
-      },
 
       handleMarketEvent: (event: { type: 'STOCK_SPLIT' | 'REVERSE_SPLIT', symbol: string }) => {
         set((state) => {
@@ -750,7 +677,11 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      payLoan: (playerId: string, liabilityId: string) => {
+      takeLoan: (playerId: string, amount: number) => {
+        get().borrowMoney(playerId, amount);
+      },
+
+      payDebt: (playerId: string, liabilityId: string) => {
         set((state) => {
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
@@ -772,6 +703,26 @@ export const useGameStore = create<GameState>()(
             });
 
             return { ...p, statement: recalculateStatement(draftStatement, p.profession) };
+          });
+          return { players };
+        });
+      },
+
+      payLoan: (playerId: string, liabilityId: string) => {
+        get().payDebt(playerId, liabilityId);
+      },
+
+      payCash: (playerId: string, amount: number) => {
+        set((state) => {
+          const players = state.players.map(p => {
+            if (p.id !== playerId) return p;
+            return {
+              ...p,
+              statement: {
+                ...p.statement,
+                cash: p.statement.cash - amount
+              }
+            };
           });
           return { players };
         });
@@ -811,7 +762,7 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      buyFastTrackBusiness: (playerId, cashflow, cost) => {
+      buyFastTrackBusiness: (playerId, name, cashflow, cost, _roll) => {
         set((state) => {
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
@@ -823,7 +774,7 @@ export const useGameStore = create<GameState>()(
             get().addHistory({
               playerId,
               type: 'BUY',
-              description: `Purchased Fast Track Business: +$${cashflow.toLocaleString()} cashflow`,
+              description: `Purchased Fast Track Business: ${name} (+$${cashflow.toLocaleString()} cashflow)`,
               amount: cost,
               cashflowChange: cashflow
             });
@@ -831,6 +782,7 @@ export const useGameStore = create<GameState>()(
             return {
               ...p,
               fastTrackCashflow: newCashflow,
+              fastTrackBusinesses: [...p.fastTrackBusinesses, { name, cashflow }],
               winner: won ? p.id : undefined,
               statement: {
                 ...p.statement,
@@ -842,7 +794,7 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      buyDream: (playerId) => {
+      buyDream: (playerId, _cost) => {
         set((state) => {
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
@@ -866,6 +818,8 @@ export const useGameStore = create<GameState>()(
           });
           return { players, winner: playerId };
         });
+      },
+
       resolveFastTrackPenalty: (playerId, type) => {
         set((state) => {
           const players = state.players.map(p => {
@@ -901,6 +855,57 @@ export const useGameStore = create<GameState>()(
         });
       },
 
+      handleMarketEvent: (event) => {
+        set((state) => {
+          const players = state.players.map(p => {
+            const stocks = p.statement.assets.filter(a => a.type === 'STOCK' && a.name === event.symbol);
+            if (stocks.length === 0) return p;
+
+            const updatedAssets = p.statement.assets.map(a => {
+              if (a.type === 'STOCK' && a.name === event.symbol) {
+                const newShares = event.type === 'STOCK_SPLIT' ? (a.shares || 0) * 2 : Math.floor((a.shares || 0) / 2);
+                return { ...a, shares: newShares };
+              }
+              return a;
+            });
+
+            return {
+              ...p,
+              statement: { ...p.statement, assets: updatedAssets }
+            };
+          });
+
+          get().addHistory({
+            playerId: 'system',
+            type: 'SPLIT',
+            description: `${event.symbol} ${event.type === 'STOCK_SPLIT' ? 'Split 2-for-1' : 'Reverse Split 1-for-2'}`,
+            amount: 0,
+            cashflowChange: 0
+          });
+
+          return { players };
+        });
+      },
+
+      transferDeal: (fromPlayerId, toPlayerId, card, fee) => {
+        set((state) => {
+          const players = state.players.map(p => {
+            if (p.id === fromPlayerId) {
+              return { ...p, statement: { ...p.statement, cash: p.statement.cash + fee } };
+            }
+            if (p.id === toPlayerId) {
+              return { ...p, statement: { ...p.statement, cash: p.statement.cash - fee } };
+            }
+            return p;
+          });
+          return { players, activeCard: card }; // The receiver now "owns" the card action
+        });
+      },
+
+      setMyPlayerId: (id) => set({ myPlayerId: id }),
+
+      setAIAction: (action) => set({ lastAIAction: action }),
+
       handleMacroEconomicEvent: (event) => {
         set((state) => {
           const players = state.players.map(p => {
@@ -909,8 +914,6 @@ export const useGameStore = create<GameState>()(
 
             if (event === 'BOOM') {
               description = "ECONOMIC BOOM: Real Estate values increased!";
-              // In this engine, we'll represent this as a one-time cash bonus or just a log for now
-              // as we don't have a dynamic 'Current Market Value' field on assets yet.
             } else if (event === 'RECESSION') {
               description = "RECESSION: Business cashflow dropped by 20%!";
               draftStatement.assets = p.statement.assets.map(a => 
@@ -966,8 +969,13 @@ export const useGameStore = create<GameState>()(
         // 1. Roll Dice
         setTimeout(() => {
           get().setRolling(true);
-          const numDice = (currentPlayer.phase === 'RAT_RACE' && currentPlayer.charityTurnsRemaining > 0) ? 2 : 
-                         (currentPlayer.phase === 'FAST_TRACK') ? 2 : 1;
+          let numDice = 1;
+          if (currentPlayer.phase === 'RAT_RACE') {
+            numDice = currentPlayer.charityTurnsRemaining > 0 ? 2 : 1;
+          } else {
+            // Fast Track
+            numDice = currentPlayer.charityTurnsRemaining > 0 ? 3 : 2;
+          }
           
           setTimeout(() => {
             get().rollDice(numDice);
@@ -989,8 +997,20 @@ export const useGameStore = create<GameState>()(
               
               if (currentSpace.type === 'BUSINESS' && currentSpace.business) {
                 if (currentPlayer.statement.cash >= currentSpace.business.cost) {
-                  get().setAIAction({ name: 'Fast Track Business', description: `AI bought ${currentSpace.business.name}` });
-                  get().buyFastTrackBusiness(currentPlayer.id, currentSpace.business.cashflow, currentSpace.business.cost);
+                  // AI Rolls for success if required
+                  let roll = 0;
+                  if (currentSpace.business.requiredRoll) {
+                    roll = Math.floor(Math.random() * 6) + 1;
+                    get().setAIAction({ name: 'Business Pitch', description: `AI rolled ${roll} (needed ${currentSpace.business.requiredRoll}+)` });
+                  } else {
+                    get().setAIAction({ name: 'Fast Track Business', description: `AI bought ${currentSpace.business.name}` });
+                  }
+                  
+                  const business = currentSpace.business;
+                  const pid = currentPlayer.id;
+                  setTimeout(() => {
+                    get().buyFastTrackBusiness(pid, business.name, business.cashflow, business.cost, roll);
+                  }, 1000);
                 } else {
                   get().setAIAction({ name: 'Passing', description: `AI couldn't afford ${currentSpace.business.name}` });
                 }
@@ -1007,7 +1027,6 @@ export const useGameStore = create<GameState>()(
               // Rat Race Phase Logic
               const card = state.activeCard;
               let actionTaken = false;
-              // ... existing rat race logic ...
 
               if (card.asset) {
                 const asset = card.asset;
@@ -1036,6 +1055,21 @@ export const useGameStore = create<GameState>()(
               if (!actionTaken) {
                 get().setAIAction({ name: 'Passing', description: `AI declined the deal` });
                 get().resolveCard();
+              }
+            } else {
+              // Non-card spaces (Baby, Charity, Downsized)
+              const space = RAT_RACE_SPACES[currentPlayer.position];
+              if (space.type === 'BABY') {
+                get().haveChild(currentPlayer.id);
+                get().setAIAction({ name: 'New Family Member', description: `${currentPlayer.name} has a baby!` });
+              } else if (space.type === 'CHARITY') {
+                if (currentPlayer.statement.cash >= currentPlayer.statement.totalIncome * 0.1) {
+                  get().donateToCharity(currentPlayer.id);
+                  get().setAIAction({ name: 'Charity', description: `${currentPlayer.name} donated to charity!` });
+                }
+              } else if (space.type === 'DOWNSIZED') {
+                get().goDownsized(currentPlayer.id);
+                get().setAIAction({ name: 'Downsized', description: `${currentPlayer.name} was downsized!` });
               }
             }
 

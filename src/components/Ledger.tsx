@@ -6,7 +6,8 @@ import { AuditLog } from './AuditLog';
 import { FinancialControls } from './FinancialControls';
 
 export const Ledger = () => {
-  const { players, currentPlayerIndex, haveChild, enterFastTrack, resetGame } = useGameStore();
+  const { players, currentPlayerIndex, haveChild, enterFastTrack, resetGame, myPlayerId } = useGameStore();
+  const isMyTurn = myPlayerId === 'LOCAL' || players[currentPlayerIndex]?.id === myPlayerId;
   const [isBankModalOpen, setBankModalOpen] = useState(false);
 
   const player = players[currentPlayerIndex];
@@ -79,7 +80,7 @@ export const Ledger = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .ledger-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -170,7 +171,7 @@ export const Ledger = () => {
           </div>
         )}
 
-        <style jsx>{`
+        <style>{`
           .fast-track-ledger { display: flex; flexDirection: column; gap: 1rem; }
           .target-card { padding: 1.5rem; text-align: center; }
           .big-value { font-size: 2.5rem; font-weight: 800; color: var(--color-primary); }
@@ -185,7 +186,7 @@ export const Ledger = () => {
   };
 
   return (
-    <div className="ledger-area glass-panel animate-slide-up" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '1.5rem', gap: '1.5rem' }}>
+    <div className={`ledger-area glass-panel animate-slide-up ${isMyTurn ? 'turn-pulse' : ''}`} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '1.5rem', gap: '1.5rem' }}>
       
       <div className="ledger-header">
         <div className="header-top">
@@ -261,9 +262,9 @@ export const Ledger = () => {
       {/* Audit Log / History */}
       <AuditLog />
 
-      <BankModal isOpen={isBankModalOpen} onClose={() => setBankModalOpen(false)} />
+      {isBankModalOpen && <BankModal onClose={() => setBankModalOpen(false)} />}
 
-      <style jsx>{`
+      <style>{`
         .ledger-header { border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem; }
         .header-top { display: flex; justify-content: space-between; align-items: baseline; }
         .cash-summary { display: flex; justify-content: space-between; margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 16px; }

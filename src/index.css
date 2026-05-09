@@ -197,3 +197,28 @@
  .animate-progress-width {
   animation: progressWidth 2s linear forwards;
  }
+
+  /* Turn Pulse Animation */
+  @keyframes turn-glow {
+    0% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
+    50% { box-shadow: 0 0 30px rgba(212, 175, 55, 0.4), inset 0 0 15px rgba(212, 175, 55, 0.1); }
+    100% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
+  }
+
+  .turn-pulse {
+    animation: turn-glow 2s infinite ease-in-out;
+    border-color: rgba(212, 175, 55, 0.5) !important;
+  }
+
+  /* Dice Shake Animation */
+  @keyframes dice-shake {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(10deg) translate(2px, -2px); }
+    50% { transform: rotate(-10deg) translate(-2px, 2px); }
+    75% { transform: rotate(5deg) translate(1px, -1px); }
+    100% { transform: rotate(0deg); }
+  }
+
+  .dice-shaking {
+    animation: dice-shake 0.1s infinite;
+  }

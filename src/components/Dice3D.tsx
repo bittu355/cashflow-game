@@ -45,7 +45,7 @@ export const Dice3D: React.FC<Dice3DProps> = ({ value, rolling }) => {
   }, [value, rolling]);
 
   return (
-    <div className="dice-container">
+    <div className={`dice-container ${rolling ? 'dice-shaking' : ''}`}>
       <div 
         className="dice" 
         style={{ 

@@ -12,7 +12,7 @@ export const Board = () => {
     currentPlayerIndex, endTurn, drawCard, 
     pendingPaydays, collectPayday, runAITurn,
     isRolling, setRolling, lastAIAction,
-    turnCount, activeMacroEvent
+    turnCount, activeMacroEvent, myPlayerId
   } = useGameStore();
   const [scale, setScale] = useState(1);
 
@@ -29,6 +29,7 @@ export const Board = () => {
   }, []);
 
   const currentPlayer = players[currentPlayerIndex];
+  const isMyTurn = myPlayerId === 'LOCAL' || currentPlayer?.id === myPlayerId;
 
   // AI Trigger
   useEffect(() => {
@@ -360,60 +361,85 @@ export const Board = () => {
                 </div>
                 
                 <div style={{ width: '100%', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {RAT_RACE_SPACES[currentPlayer.position].type === 'OPPORTUNITY' && (
+                  {!isMyTurn ? (
+                    <div className="glass-panel" style={{ padding: '1rem', color: 'var(--color-primary)', fontSize: '0.8rem', textAlign: 'center' }}>
+                      {currentPlayer?.name} is playing...
+                    </div>
+                  ) : (
                     <>
-                      <button className="btn btn-success btn-pop" style={{ padding: '0.8rem' }} onClick={() => drawCard('SMALL_DEAL')}>
-                        SMALL DEAL
-                      </button>
-                      <button 
-                        className="btn btn-success btn-pop" 
-                        style={{ padding: '0.8rem', background: '#1b5e20', opacity: currentPlayer.statement.cash < 6000 ? 0.5 : 1 }} 
-                        onClick={() => drawCard('BIG_DEAL')}
-                      >
-                        BIG DEAL
+                      {RAT_RACE_SPACES[currentPlayer.position].type === 'OPPORTUNITY' && (
+                        <>
+                          <button className="btn btn-success btn-pop" style={{ padding: '0.8rem' }} onClick={() => drawCard('SMALL_DEAL')}>
+                            SMALL DEAL
+                          </button>
+                          <button 
+                            className="btn btn-success btn-pop" 
+                            style={{ padding: '0.8rem', background: '#1b5e20', opacity: currentPlayer.statement.cash < 6000 ? 0.5 : 1 }} 
+                            onClick={() => drawCard('BIG_DEAL')}
+                          >
+                            BIG DEAL
+                          </button>
+                        </>
+                      )}
+                      
+                      {RAT_RACE_SPACES[currentPlayer.position].type === 'DOODAD' && (
+                        <button className="btn btn-pop" style={{ backgroundColor: '#dc3545', color: 'white', padding: '1rem' }} onClick={() => drawCard('DOODAD')}>
+                          DRAW DOODAD
+                        </button>
+                      )}
+                      
+                      {RAT_RACE_SPACES[currentPlayer.position].type === 'MARKET' && (
+                        <button className="btn btn-pop" style={{ backgroundColor: '#007bff', color: 'white', padding: '1rem' }} onClick={() => drawCard('MARKET')}>
+                          DRAW MARKET
+                        </button>
+                      )}
+
+                      {RAT_RACE_SPACES[currentPlayer.position].type === 'BABY' && (
+                        <button className="btn btn-pop" style={{ backgroundColor: '#e83e8c', color: 'white', padding: '1rem' }} onClick={() => { useGameStore.getState().haveChild(currentPlayer.id); endTurn(); }}>
+                          ADD FAMILY MEMBER
+                        </button>
+                      )}
+                      
+                      {RAT_RACE_SPACES[currentPlayer.position].type === 'CHARITY' && (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button className="btn btn-pop" style={{ backgroundColor: '#17a2b8', color: 'white', flex: 1, padding: '1rem' }} onClick={() => { useGameStore.getState().donateToCharity(currentPlayer.id); endTurn(); }}>
+                            DONATE (10% Income)
+                          </button>
+                          <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => endTurn()}>
+                            SKIP
+                          </button>
+                        </div>
+                      )}
+
+                      {RAT_RACE_SPACES[currentPlayer.position].type === 'DOWNSIZED' && (
+                        <button className="btn btn-pop" style={{ backgroundColor: '#6c757d', color: 'white', padding: '1rem' }} onClick={() => { useGameStore.getState().goDownsized(currentPlayer.id); endTurn(); }}>
+                          PAY PENALTY & LOSE 2 TURNS
+                        </button>
+                      )}
+
+                      {pendingPaydays > 0 && (
+                        <button 
+                          className="btn btn-pop payday-alert" 
+                          style={{ backgroundColor: '#ffd700', color: '#000', fontWeight: 900, padding: '1rem', borderRadius: '100px' }} 
+                          onClick={collectPayday}
+                        >
+                          COLLECT PAYDAY! ({pendingPaydays})
+                        </button>
+                      )}
+                      
+                      <button className="btn btn-primary btn-pop" style={{ padding: '0.8rem', marginTop: '0.5rem', opacity: 0.8 }} onClick={() => endTurn()}>
+                        END TURN
                       </button>
                     </>
                   )}
-                  
-                  {RAT_RACE_SPACES[currentPlayer.position].type === 'DOODAD' && (
-                    <button className="btn btn-pop" style={{ backgroundColor: '#dc3545', color: 'white', padding: '1rem' }} onClick={() => drawCard('DOODAD')}>
-                      DRAW DOODAD
-                    </button>
-                  )}
-                  
-                  {RAT_RACE_SPACES[currentPlayer.position].type === 'MARKET' && (
-                    <button className="btn btn-pop" style={{ backgroundColor: '#007bff', color: 'white', padding: '1rem' }} onClick={() => drawCard('MARKET')}>
-                      DRAW MARKET
-                    </button>
-                  )}
-
-                  {RAT_RACE_SPACES[currentPlayer.position].type === 'BABY' && (
-                    <button className="btn btn-pop" style={{ backgroundColor: '#e83e8c', color: 'white', padding: '1rem' }} onClick={() => { useGameStore.getState().haveChild(currentPlayer.id); endTurn(); }}>
-                      ADD FAMILY MEMBER
-                    </button>
-                  )}
-
-                  {pendingPaydays > 0 && (
-                    <button 
-                      className="btn btn-pop payday-alert" 
-                      style={{ backgroundColor: '#ffd700', color: '#000', fontWeight: 900, padding: '1rem', borderRadius: '100px' }} 
-                      onClick={collectPayday}
-                    >
-                      COLLECT PAYDAY! ({pendingPaydays})
-                    </button>
-                  )}
-                  
-                  <button className="btn btn-primary btn-pop" style={{ padding: '0.8rem', marginTop: '0.5rem', opacity: 0.8 }} onClick={() => endTurn()}>
-                    END TURN
-                  </button>
                 </div>
               </div>
             )}
           </div>
+          <CardModal />
         </div>
       </div>
     </div>
-      <CardModal />
     </div>
   );
 };

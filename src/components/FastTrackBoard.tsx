@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { FAST_TRACK_SPACES } from '../data/fastTrack';
+import { WEALTH_TIPS } from '../data/tips';
 
 export const FastTrackBoard = () => {
-  const { players, turnPhase, rollDice, diceRoll, currentPlayerIndex, endTurn, buyDream, buyFastTrackBusiness, resolveFastTrackPenalty, lastAIAction } = useGameStore();
+  const { players, turnPhase, rollDice, diceRoll, currentPlayerIndex, endTurn, buyDream, buyFastTrackBusiness, resolveFastTrackPenalty, lastAIAction, myPlayerId } = useGameStore();
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
@@ -19,6 +20,7 @@ export const FastTrackBoard = () => {
   }, []);
 
   const currentPlayer = players[currentPlayerIndex];
+  const isMyTurn = myPlayerId === 'LOCAL' || currentPlayer?.id === myPlayerId;
 
   if (!currentPlayer || currentPlayer.phase !== 'FAST_TRACK') return null;
 
@@ -228,42 +230,62 @@ export const FastTrackBoard = () => {
                   Ready to Move
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', width: '100%' }}>
-                  <button 
-                    className="btn btn-pop" 
-                    style={{ 
-                      width: '100%', 
-                      padding: '1rem', 
-                      borderRadius: '100px', 
-                      backgroundColor: '#e83e8c', 
-                      color: 'white', 
-                      fontWeight: 900,
-                      fontSize: '1.1rem',
-                      letterSpacing: '2px',
-                      boxShadow: '0 10px 20px rgba(232, 62, 140, 0.3)',
-                      border: 'none'
-                    }} 
-                    onClick={() => rollDice(2)}
-                  >
-                    ROLL 2 DICE
-                  </button>
-                  {currentPlayer.charityTurnsRemaining > 0 && (
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button 
-                        className="btn btn-pop" 
-                        style={{ flex: 1, padding: '0.8rem', borderRadius: '50px', backgroundColor: 'rgba(232, 62, 140, 0.2)', border: '1px solid #e83e8c', color: '#fff' }}
-                        onClick={() => rollDice(1)}
-                      >
-                        1 DIE
-                      </button>
-                      <button 
-                        className="btn btn-pop" 
-                        style={{ flex: 1, padding: '0.8rem', borderRadius: '50px', backgroundColor: '#e83e8c', color: '#fff', border: 'none', fontWeight: 900 }}
-                        onClick={() => rollDice(3)}
-                      >
-                        3 DICE
-                      </button>
-                    </div>
-                  )}
+                  <div className="wealth-tip animate-fade-in" style={{ 
+                    fontSize: '0.75rem', 
+                    color: 'rgba(255,255,255,0.4)', 
+                    fontStyle: 'italic',
+                    padding: '0.5rem',
+                    background: 'rgba(255,255,255,0.02)',
+                    borderRadius: '8px'
+                  }}>
+                    "{WEALTH_TIPS[Math.floor(Date.now() / 3600000) % WEALTH_TIPS.length]}"
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', width: '100%' }}>
+                    {!isMyTurn ? (
+                      <div className="glass-panel" style={{ padding: '1.5rem', color: '#e83e8c', fontSize: '1rem', fontWeight: 600, textAlign: 'center' }}>
+                        ⏳ {currentPlayer?.name} is on the move...
+                      </div>
+                    ) : (
+                      <>
+                        <button 
+                          className="btn btn-pop" 
+                          style={{ 
+                            width: '100%', 
+                            padding: '1rem', 
+                            borderRadius: '100px', 
+                            backgroundColor: '#e83e8c', 
+                            color: 'white', 
+                            fontWeight: 900,
+                            fontSize: '1.1rem',
+                            letterSpacing: '2px',
+                            boxShadow: '0 10px 20px rgba(232, 62, 140, 0.3)',
+                            border: 'none'
+                          }} 
+                          onClick={() => rollDice(2)}
+                        >
+                          ROLL 2 DICE
+                        </button>
+                        {currentPlayer.charityTurnsRemaining > 0 && (
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button 
+                              className="btn btn-pop" 
+                              style={{ flex: 1, padding: '0.8rem', borderRadius: '50px', backgroundColor: 'rgba(232, 62, 140, 0.2)', border: '1px solid #e83e8c', color: '#fff' }}
+                              onClick={() => rollDice(1)}
+                            >
+                              1 DIE
+                            </button>
+                            <button 
+                              className="btn btn-pop" 
+                              style={{ flex: 1, padding: '0.8rem', borderRadius: '50px', backgroundColor: '#e83e8c', color: '#fff', border: 'none', fontWeight: 900 }}
+                              onClick={() => rollDice(3)}
+                            >
+                              3 DICE
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -293,51 +315,70 @@ export const FastTrackBoard = () => {
                 </div>
                 
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                  {currentSpace.type === 'BUSINESS' && currentSpace.business && (
-                    <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)' }}>
-                      <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                        CASHFLOW: <span style={{ color: 'var(--color-success)' }}>+${currentSpace.business.cashflow.toLocaleString()}</span>
-                      </div>
-                      <button 
-                        className="btn btn-success btn-pop" 
-                        style={{ width: '100%', padding: '1rem', borderRadius: '50px' }}
-                        disabled={currentPlayer.statement.cash < currentSpace.business.cost}
-                        onClick={() => {
-                          buyFastTrackBusiness(currentPlayer.id, currentSpace.business!.cashflow, currentSpace.business!.cost);
-                          endTurn();
-                        }}
-                      >
-                        INVEST ${(currentSpace.business.cost / 1000)}k
-                      </button>
+                  {!isMyTurn ? (
+                    <div className="glass-panel" style={{ padding: '1.5rem', color: '#e83e8c', fontSize: '1rem', fontWeight: 600, textAlign: 'center' }}>
+                      ⏳ {currentPlayer?.name} is thinking big...
                     </div>
-                  )}
+                  ) : (
+                    <>
+                      {currentSpace.type === 'BUSINESS' && currentSpace.business && (
+                        <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)' }}>
+                          <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                            CASHFLOW: <span style={{ color: 'var(--color-success)' }}>+${currentSpace.business.cashflow.toLocaleString()}</span>
+                          </div>
+                          {currentSpace.business.requiredRoll && (
+                            <div style={{ fontSize: '0.8rem', color: '#ffd700', marginBottom: '0.5rem', fontWeight: 600 }}>
+                              ⚠️ REQUIRES ROLL: {currentSpace.business.requiredRoll}+
+                            </div>
+                          )}
+                          <button 
+                            className="btn btn-success btn-pop" 
+                            style={{ width: '100%', padding: '1rem', borderRadius: '50px' }}
+                            disabled={currentPlayer.statement.cash < currentSpace.business.cost}
+                            onClick={() => {
+                              if (currentSpace.business!.requiredRoll) {
+                                const roll = Math.floor(Math.random() * 6) + 1;
+                                alert(`You rolled a ${roll}! (Needed ${currentSpace.business!.requiredRoll}+)`);
+                                buyFastTrackBusiness(currentPlayer.id, currentSpace.business!.name, currentSpace.business!.cashflow, currentSpace.business!.cost, roll);
+                              } else {
+                                buyFastTrackBusiness(currentPlayer.id, currentSpace.business!.name, currentSpace.business!.cashflow, currentSpace.business!.cost);
+                              }
+                              endTurn();
+                            }}
+                          >
+                            {currentSpace.business.requiredRoll ? 'ROLL & INVEST' : `INVEST $${(currentSpace.business.cost / 1000)}k`}
+                          </button>
+                        </div>
+                      )}
 
-                  {currentSpace.type === 'DREAM' && (
-                    <button 
-                      className="btn btn-pop" 
-                      style={{ backgroundColor: '#ffd700', color: '#000', width: '100%', padding: '1.2rem', fontWeight: 900, fontSize: '1.1rem' }} 
-                      onClick={() => { buyDream(currentPlayer.id); endTurn(); }}
-                    >
-                      ACHIEVE DREAM
-                    </button>
-                  )}
+                      {currentSpace.type === 'DREAM' && (
+                        <button 
+                          className="btn btn-pop" 
+                          style={{ backgroundColor: '#ffd700', color: '#000', width: '100%', padding: '1.2rem', fontWeight: 900, fontSize: '1.1rem' }} 
+                          onClick={() => { buyDream(currentPlayer.id); endTurn(); }}
+                        >
+                          ACHIEVE DREAM
+                        </button>
+                      )}
 
-                  {['TAX_AUDIT', 'LAWSUIT', 'DIVORCE'].includes(currentSpace.type) && (
-                    <button 
-                      className="btn btn-pop" 
-                      style={{ backgroundColor: '#dc3545', color: 'white', width: '100%', padding: '1.2rem' }} 
-                      onClick={() => {
-                        resolveFastTrackPenalty(currentPlayer.id, currentSpace.type as any);
-                        endTurn();
-                      }}
-                    >
-                      RESOLVE SETTLEMENT
-                    </button>
+                      {['TAX_AUDIT', 'LAWSUIT', 'DIVORCE'].includes(currentSpace.type) && (
+                        <button 
+                          className="btn btn-pop" 
+                          style={{ backgroundColor: '#dc3545', color: 'white', width: '100%', padding: '1.2rem' }} 
+                          onClick={() => {
+                            resolveFastTrackPenalty(currentPlayer.id, currentSpace.type as any);
+                            endTurn();
+                          }}
+                        >
+                          RESOLVE SETTLEMENT
+                        </button>
+                      )}
+                      
+                      <button className="btn btn-primary btn-pop" style={{ padding: '1rem', marginTop: '1rem', borderRadius: '50px', opacity: 0.8 }} onClick={() => endTurn()}>
+                        COMPLETE TURN
+                      </button>
+                    </>
                   )}
-                  
-                  <button className="btn btn-primary btn-pop" style={{ padding: '1rem', marginTop: '1rem', borderRadius: '50px', opacity: 0.8 }} onClick={() => endTurn()}>
-                    COMPLETE TURN
-                  </button>
                 </div>
               </div>
             )}

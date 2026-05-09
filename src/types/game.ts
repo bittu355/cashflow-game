@@ -84,6 +84,7 @@ export interface Player {
   // Fast track specific properties
   fastTrackCashflow: number; 
   fastTrackTarget: number;
+  fastTrackBusinesses: { name: string, cashflow: number }[];
   hasBoughtDream: boolean;
   
   charityTurnsRemaining: number;
@@ -94,7 +95,7 @@ export interface TransactionRecord {
   id: string;
   playerId: string;
   timestamp: number;
-  type: 'BUY' | 'SELL' | 'PAYDAY' | 'LOAN' | 'SPLIT' | 'CHARITY' | 'CHILD' | 'BANKRUPTCY';
+  type: 'BUY' | 'SELL' | 'PAYDAY' | 'LOAN' | 'SPLIT' | 'CHARITY' | 'CHILD' | 'BANKRUPTCY' | 'MARKET';
   description: string;
   amount: number;
   cashflowChange: number;
@@ -112,7 +113,7 @@ export interface GameState {
   isRolling: boolean;
   
   // Helpers
-  addPlayer: (name: string, color: string, profession: Profession, dreamId?: string, isBot?: boolean) => void;
+  addPlayer: (name: string, color: string, profession: Profession, dreamId?: string, isBot?: boolean, customId?: string) => void;
   setRolling: (rolling: boolean) => void;
   rollDice: (numDice: number) => void;
   collectPayday: () => void;
@@ -135,21 +136,17 @@ export interface GameState {
   
   // Fast Track Actions
   enterFastTrack: (playerId: string) => void;
-  buyDream: (playerId: string) => void;
-  buyFastTrackBusiness: (playerId: string, cashflowIncrease: number, cost: number) => void;
+  buyDream: (playerId: string, cost?: number) => void;
+  buyFastTrackBusiness: (playerId: string, name: string, cashflow: number, cost: number, roll?: number) => void;
 
-  // New Digital Classic Features
+  // Digital Classic Features & Multiplayer
   handleMarketEvent: (event: { type: 'STOCK_SPLIT' | 'REVERSE_SPLIT', symbol: string }) => void;
   transferDeal: (fromPlayerId: string, toPlayerId: string, card: any, fee: number, isPartnership?: boolean) => void;
   borrowMoney: (playerId: string, amount: number) => void;
   payLoan: (playerId: string, liabilityId: string) => void;
-  donateToCharity: (playerId: string) => void;
-  downsize: (playerId: string) => void;
-  declareBankruptcy: (playerId: string) => void;
-  buyFastTrackBusiness: (playerId: string, cashflow: number, cost: number) => void;
-  buyDream: (playerId: string) => void;
   resolveFastTrackPenalty: (playerId: string, type: 'TAX_AUDIT' | 'LAWSUIT' | 'DIVORCE') => void;
   handleMacroEconomicEvent: (event: 'BOOM' | 'RECESSION' | 'INFLATION') => void;
+  
   turnCount: number;
   activeMacroEvent: { type: 'BOOM' | 'RECESSION' | 'INFLATION', turnsRemaining: number } | null;
   lastAIAction: { name: string, description: string } | null;
@@ -157,4 +154,11 @@ export interface GameState {
   
   // AI Logic
   runAITurn: () => void;
+  
+  // Local Player Identity (Multiplayer)
+  myPlayerId: string | null;
+  setMyPlayerId: (id: string | null) => void;
+  
+  // Canonical payCash utility
+  payCash: (playerId: string, amount: number) => void;
 }

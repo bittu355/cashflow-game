@@ -9,29 +9,48 @@ export const Lobby = () => {
   const [joinCode, setJoinCode] = useState('');
   const [selectedProfIndex, setSelectedProfIndex] = useState(0);
   const [selectedDreamIndex, setSelectedDreamIndex] = useState(0);
-  const { addPlayer } = useGameStore();
+  const [roomCode, setRoomCode] = useState<string | null>(null);
+  const { addPlayer, setMyPlayerId } = useGameStore();
 
   const currentProf = PROFESSIONS[selectedProfIndex];
   const currentDream = DREAMS[selectedDreamIndex];
 
   const handleStartLocal = () => {
+    setMyPlayerId('LOCAL'); // In local mode, we own all players
     addPlayer('Player 1', '#FF5A5F', currentProf, currentDream.id);
   };
 
   const handleCreateOnline = async () => {
     const code = generateGameId();
-    addPlayer('Host', '#FF5A5F', currentProf, currentDream.id);
+    const playerId = `host-${Date.now()}`;
+    setMyPlayerId(playerId);
+    addPlayer('Host', '#FF5A5F', currentProf, currentDream.id, false, playerId);
     await createMultiplayerGame(code);
-    alert(`Game created! Your join code is: ${code}`);
+    setRoomCode(code);
   };
 
   const handleJoinOnline = () => {
     if (!joinCode) return;
+    const playerId = `guest-${Date.now()}`;
+    setMyPlayerId(playerId);
     joinMultiplayerGame(joinCode.toUpperCase());
-    
-    // Add the joining player to the store locally, the multiplayer util will sync it up to the host
-    addPlayer('Guest', '#38A169', currentProf, currentDream.id);
+    addPlayer('Guest', '#38A169', currentProf, currentDream.id, false, playerId);
   };
+
+  if (roomCode) {
+    return (
+      <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg-main)' }}>
+        <div className="glass-panel" style={{ padding: '3rem', width: '100%', maxWidth: '450px', textAlign: 'center', margin: '1rem' }}>
+          <h1 style={{ color: 'var(--color-primary)', fontSize: '2rem', marginBottom: '1rem' }}>Room Created!</h1>
+          <div style={{ fontSize: '3rem', fontWeight: 900, letterSpacing: '8px', color: 'var(--color-secondary)', margin: '2rem 0', padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '16px' }}>
+            {roomCode}
+          </div>
+          <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>Share this code with your friends to play together.</p>
+          <div className="animate-pulse" style={{ color: 'var(--color-success)', fontWeight: 800 }}>WAITING FOR PLAYERS...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg-main)' }}>
@@ -97,7 +116,9 @@ export const Lobby = () => {
               Play Local (Pass & Play)
             </button>
             <button className="btn btn-pop" style={{ padding: '1rem', backgroundColor: '#6b46c1', color: 'white' }} onClick={() => {
-              addPlayer('You', '#FF5A5F', currentProf, currentDream.id, false);
+              const myId = `human-${Date.now()}`;
+              setMyPlayerId(myId);
+              addPlayer('You', '#FF5A5F', currentProf, currentDream.id, false, myId);
               // Add a random bot
               const botProf = PROFESSIONS[Math.floor(Math.random() * PROFESSIONS.length)];
               const botDream = DREAMS[Math.floor(Math.random() * DREAMS.length)];

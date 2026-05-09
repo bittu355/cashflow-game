@@ -3,6 +3,7 @@ import { Board } from './components/Board';
 import { Lobby } from './components/Lobby';
 import { GameWinModal } from './components/GameWinModal';
 import { useGameStore } from './store/gameStore';
+import './utils/multiplayer'; // Activate multiplayer listeners
 import './index.css';
 
 function App() {
