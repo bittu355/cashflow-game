@@ -1,7 +1,7 @@
-import { ref, onValue, set, get } from "firebase/database";
+import { ref, onValue, set } from "firebase/database";
 import { db } from "./firebase";
 import { useGameStore } from "../store/gameStore";
-import { GameState } from "../types/game";
+import type { GameState } from "../types/game";
 
 let currentGameId: string | null = null;
 let unsubscribeFirebase: (() => void) | null = null;

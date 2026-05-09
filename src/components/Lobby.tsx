@@ -1,54 +1,23 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { createMultiplayerGame, joinMultiplayerGame, generateGameId } from '../utils/multiplayer';
+import { PROFESSIONS } from '../data/professions';
 
 export const Lobby = () => {
   const [mode, setMode] = useState<'SELECT' | 'ONLINE'>('SELECT');
   const [joinCode, setJoinCode] = useState('');
+  const [selectedProfIndex, setSelectedProfIndex] = useState(0);
   const { addPlayer } = useGameStore();
 
+  const currentProf = PROFESSIONS[selectedProfIndex];
+
   const handleStartLocal = () => {
-    addPlayer('Player 1', '#FF5A5F', {
-      name: 'Engineer',
-      salary: 4900,
-      taxes: 1050,
-      mortgage: 75000,
-      mortgagePayment: 700,
-      schoolLoan: 12000,
-      schoolLoanPayment: 60,
-      carLoan: 7000,
-      carLoanPayment: 140,
-      creditCard: 4000,
-      creditCardPayment: 120,
-      retailDebt: 1000,
-      retailDebtPayment: 50,
-      otherExpenses: 1090,
-      perChildExpense: 250,
-      savings: 400
-    });
+    addPlayer('Player 1', '#FF5A5F', currentProf);
   };
 
   const handleCreateOnline = async () => {
     const code = generateGameId();
-    // In a real app we'd let them pick their profession
-    addPlayer('Host', '#FF5A5F', {
-      name: 'Engineer',
-      salary: 4900,
-      taxes: 1050,
-      mortgage: 75000,
-      mortgagePayment: 700,
-      schoolLoan: 12000,
-      schoolLoanPayment: 60,
-      carLoan: 7000,
-      carLoanPayment: 140,
-      creditCard: 4000,
-      creditCardPayment: 120,
-      retailDebt: 1000,
-      retailDebtPayment: 50,
-      otherExpenses: 1090,
-      perChildExpense: 250,
-      savings: 400
-    });
+    addPlayer('Host', '#FF5A5F', currentProf);
     await createMultiplayerGame(code);
     alert(`Game created! Your join code is: ${code}`);
   };
@@ -58,31 +27,41 @@ export const Lobby = () => {
     joinMultiplayerGame(joinCode.toUpperCase());
     
     // Add the joining player to the store locally, the multiplayer util will sync it up to the host
-    addPlayer('Guest', '#38A169', {
-      name: 'Teacher',
-      salary: 3300,
-      taxes: 600,
-      mortgage: 50000,
-      mortgagePayment: 500,
-      schoolLoan: 12000,
-      schoolLoanPayment: 60,
-      carLoan: 5000,
-      carLoanPayment: 100,
-      creditCard: 3000,
-      creditCardPayment: 90,
-      retailDebt: 1000,
-      retailDebtPayment: 50,
-      otherExpenses: 760,
-      perChildExpense: 180,
-      savings: 400
-    });
+    addPlayer('Guest', '#38A169', currentProf);
   };
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg)' }}>
-      <div className="glass-panel" style={{ padding: '3rem', width: '400px', textAlign: 'center' }}>
+    <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg-main)' }}>
+      <div className="glass-panel" style={{ padding: '3rem', width: '450px', textAlign: 'center' }}>
         <h1 style={{ color: 'var(--color-primary)', fontSize: '2.5rem', marginBottom: '0.5rem' }}>CASHFLOW</h1>
-        <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>Escape the Rat Race.</p>
+        <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>Escape the Rat Race.</p>
+
+        <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
+          <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', color: 'var(--color-text-main)', textTransform: 'uppercase', letterSpacing: '1px' }}>Choose Profession</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <button 
+              className="btn btn-pop" 
+              style={{ backgroundColor: 'white', color: 'var(--color-primary)', borderRadius: '50%', width: '40px', height: '40px', padding: 0, boxShadow: 'var(--shadow-sm)' }}
+              onClick={() => setSelectedProfIndex(prev => prev > 0 ? prev - 1 : PROFESSIONS.length - 1)}
+            >
+              ◀
+            </button>
+            <div style={{ textAlign: 'center', flex: 1 }}>
+              <div style={{ fontWeight: 'bold', fontSize: '1.3rem', color: 'var(--color-secondary)' }}>{currentProf.name}</div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Salary:<br/><span style={{color: 'var(--color-success)', fontWeight: 600}}>${currentProf.salary}</span></div>
+                <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Savings:<br/><span style={{color: 'var(--color-text-main)', fontWeight: 600}}>${currentProf.savings}</span></div>
+              </div>
+            </div>
+            <button 
+              className="btn btn-pop" 
+              style={{ backgroundColor: 'white', color: 'var(--color-primary)', borderRadius: '50%', width: '40px', height: '40px', padding: 0, boxShadow: 'var(--shadow-sm)' }}
+              onClick={() => setSelectedProfIndex(prev => (prev + 1) % PROFESSIONS.length)}
+            >
+              ▶
+            </button>
+          </div>
+        </div>
 
         {mode === 'SELECT' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -113,14 +92,14 @@ export const Lobby = () => {
                 placeholder="Enter Room Code" 
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value)}
-                style={{ flex: 1, padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc', textTransform: 'uppercase' }}
+                style={{ flex: 1, padding: '0.5rem 1rem', borderRadius: '999px', border: '1px solid #e2e8f0', textTransform: 'uppercase', outline: 'none', fontFamily: 'var(--font-body)' }}
               />
               <button className="btn btn-success btn-pop" onClick={handleJoinOnline}>
                 Join
               </button>
             </div>
             
-            <button className="btn" style={{ marginTop: '1rem', color: 'var(--color-text-muted)' }} onClick={() => setMode('SELECT')}>
+            <button className="btn" style={{ marginTop: '0.5rem', color: 'var(--color-text-muted)', backgroundColor: 'transparent' }} onClick={() => setMode('SELECT')}>
               Back
             </button>
           </div>

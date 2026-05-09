@@ -1,20 +1,21 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { GameState, Player, Profession, Asset } from '../types/game';
+import type { GameState, Player, Profession, Asset } from '../types/game';
 import { recalculateStatement } from '../utils/finance';
-import { SMALL_DEALS, DOODADS } from '../data/cards';
+import { SMALL_DEALS, BIG_DEALS, DOODADS, MARKET } from '../data/cards';
 
 const initialPlayers: Player[] = [];
 
 export const useGameStore = create<GameState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       players: initialPlayers,
       currentPlayerIndex: 0,
       turnPhase: 'ROLL',
       diceRoll: [],
       activeCard: null,
       pendingPaydays: 0,
+      winner: null,
 
       addPlayer: (name: string, color: string, profession: Profession, dreamId: string = 'yacht') => {
         const newPlayer: Player = {
@@ -27,6 +28,10 @@ export const useGameStore = create<GameState>()(
           position: 0,
           isBankrupt: false,
           lostTurns: 0,
+          fastTrackCashflow: 0,
+          fastTrackTarget: 0,
+          hasBoughtDream: false,
+          charityTurnsRemaining: 0,
           statement: {
             salary: profession.salary,
             passiveIncome: 0,
@@ -90,6 +95,7 @@ export const useGameStore = create<GameState>()(
             return {
               ...p,
               position: newPosition,
+              charityTurnsRemaining: p.charityTurnsRemaining > 0 ? p.charityTurnsRemaining - 1 : 0
             };
           });
 
@@ -126,11 +132,15 @@ export const useGameStore = create<GameState>()(
 
       drawCard: (type) => {
         let card = null;
-        if (type === 'OPPORTUNITY') {
+        if (type === 'SMALL_DEAL') {
           // For now, randomly pick a small deal
           card = SMALL_DEALS[Math.floor(Math.random() * SMALL_DEALS.length)];
+        } else if (type === 'BIG_DEAL') {
+          card = BIG_DEALS[Math.floor(Math.random() * BIG_DEALS.length)];
         } else if (type === 'DOODAD') {
           card = DOODADS[Math.floor(Math.random() * DOODADS.length)];
+        } else if (type === 'MARKET') {
+          card = MARKET[Math.floor(Math.random() * MARKET.length)];
         } else {
           // Fallback placeholder
           card = { type, title: 'Market Event', description: 'Placeholder market event.', actionText: 'OK' };
@@ -245,11 +255,11 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      buyAsset: (playerId: string, asset: Asset) => {
+      buyAsset: (playerId: string, asset: Asset, force?: boolean) => {
         set((state) => {
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
-            if (p.statement.cash < asset.downPayment) return p; // Not enough cash
+            if (!force && p.statement.cash < asset.downPayment) return p; // Not enough cash
 
             const draftStatement = {
               ...p.statement,
@@ -380,6 +390,140 @@ export const useGameStore = create<GameState>()(
             };
           });
           return { players };
+        });
+      },
+
+      enterFastTrack: (playerId: string) => {
+        set((state) => {
+          const players = state.players.map(p => {
+            if (p.id !== playerId) return p;
+            
+            // Fast track target = Day Job Passive Income + $50,000
+            const startingPassive = p.statement.passiveIncome;
+            const target = startingPassive + 50000;
+            
+            // Give them 100x their passive income in cash to start fast track
+            const fastTrackStartingCash = startingPassive * 100;
+            
+            return {
+              ...p,
+              phase: 'FAST_TRACK',
+              position: 0, // Reset board position for fast track board
+              fastTrackCashflow: startingPassive,
+              fastTrackTarget: target,
+              statement: {
+                ...p.statement,
+                cash: p.statement.cash + fastTrackStartingCash,
+                fastTrackStartingIncome: startingPassive
+              }
+            };
+          });
+          return { players };
+        });
+      },
+
+      buyDream: (playerId: string) => {
+        set((state) => {
+          let winner = state.winner;
+          const players = state.players.map(p => {
+            if (p.id !== playerId) return p;
+            if (p.statement.cash < 50000) return p; // Dreams usually cost 50k+
+            
+            winner = p.name; // First to buy their dream wins!
+            
+            return {
+              ...p,
+              hasBoughtDream: true,
+              statement: {
+                ...p.statement,
+                cash: p.statement.cash - 50000
+              }
+            };
+          });
+          return { players, winner };
+        });
+      },
+
+      buyFastTrackBusiness: (playerId: string, cashflowIncrease: number, cost: number) => {
+        set((state) => {
+          let winner = state.winner;
+          const players = state.players.map(p => {
+            if (p.id !== playerId) return p;
+            if (p.statement.cash < cost) return p;
+            
+            const newCashflow = p.fastTrackCashflow + cashflowIncrease;
+            if (newCashflow >= p.fastTrackTarget) {
+              winner = p.name; // Alternate win condition
+            }
+            
+            return {
+              ...p,
+              fastTrackCashflow: newCashflow,
+              statement: {
+                ...p.statement,
+                cash: p.statement.cash - cost
+              }
+            };
+          });
+          return { players, winner };
+        });
+      },
+
+      donateToCharity: (playerId: string) => {
+        set((state) => {
+          const players = state.players.map(p => {
+            if (p.id !== playerId) return p;
+            
+            // Donate 10% of total income
+            const donationAmount = p.statement.totalIncome * 0.10;
+            
+            const draftStatement = {
+              ...p.statement,
+              cash: p.statement.cash - donationAmount
+            };
+
+            return {
+              ...p,
+              charityTurnsRemaining: 3, // Gets 2 dice for next 3 turns
+              statement: recalculateStatement(draftStatement, p.profession)
+            };
+          });
+          return { players };
+        });
+      },
+
+      goDownsized: (playerId: string) => {
+        set((state) => {
+          const players = state.players.map(p => {
+            if (p.id !== playerId) return p;
+            
+            // Pay total expenses
+            const penalty = p.statement.totalExpenses;
+            
+            const draftStatement = {
+              ...p.statement,
+              cash: p.statement.cash - penalty
+            };
+
+            return {
+              ...p,
+              lostTurns: 2, // Lose 2 turns
+              statement: recalculateStatement(draftStatement, p.profession)
+            };
+          });
+          return { players };
+        });
+      },
+
+      resetGame: () => {
+        set({
+          players: [],
+          currentPlayerIndex: 0,
+          turnPhase: 'ROLL',
+          diceRoll: [],
+          activeCard: null,
+          pendingPaydays: 0,
+          winner: null,
         });
       }
     }),

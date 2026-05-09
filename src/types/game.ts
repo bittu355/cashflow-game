@@ -80,6 +80,13 @@ export interface Player {
   position: number; // Index on the board track
   isBankrupt: boolean;
   lostTurns: number;
+  
+  // Fast track specific properties
+  fastTrackCashflow: number; 
+  fastTrackTarget: number;
+  hasBoughtDream: boolean;
+  
+  charityTurnsRemaining: number;
 }
 
 export interface GameState {
@@ -89,21 +96,30 @@ export interface GameState {
   diceRoll: number[];
   activeCard: any | null; // Placeholder
   pendingPaydays: number;
+  winner: string | null;
   
   // Helpers
-  addPlayer: (name: string, color: string, profession: Profession) => void;
+  addPlayer: (name: string, color: string, profession: Profession, dreamId?: string) => void;
   rollDice: (numDice: number) => void;
   collectPayday: () => void;
-  drawCard: (type: 'OPPORTUNITY' | 'DOODAD' | 'MARKET') => void;
+  drawCard: (type: 'SMALL_DEAL' | 'BIG_DEAL' | 'DOODAD' | 'MARKET') => void;
   resolveCard: () => void;
   endTurn: () => void;
   
   // Financial Actions
   takeLoan: (playerId: string, amount: number) => void;
   payDebt: (playerId: string, liabilityId: string, amount?: number) => void;
-  buyAsset: (playerId: string, asset: Asset) => void;
+  buyAsset: (playerId: string, asset: Asset, force?: boolean) => void;
   sellAsset: (playerId: string, assetId: string, salePrice: number) => void;
   haveChild: (playerId: string) => void;
   payday: (playerId: string) => void;
   declareBankruptcy: (playerId: string) => void;
+  donateToCharity: (playerId: string) => void;
+  goDownsized: (playerId: string) => void;
+  resetGame: () => void;
+  
+  // Fast Track Actions
+  enterFastTrack: (playerId: string) => void;
+  buyDream: (playerId: string) => void;
+  buyFastTrackBusiness: (playerId: string, cashflowIncrease: number, cost: number) => void;
 }

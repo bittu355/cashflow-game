@@ -1,4 +1,4 @@
-import { FinancialStatement, Profession, Asset, Liability } from '../types/game';
+import type { FinancialStatement, Profession } from '../types/game';
 
 /**
  * Re-calculates all derived totals on a financial statement to ensure perfect math sync.
@@ -38,9 +38,7 @@ export const recalculateStatement = (
   // 3. Calculate Cash Flow
   const monthlyCashFlow = totalIncome - totalExpenses;
 
-  // 4. Check Fast Track Win Condition
   // If passive income strictly exceeds total expenses, they are ready for the Fast Track
-  const readyForFastTrack = passiveIncome > totalExpenses;
 
   return {
     ...statement,

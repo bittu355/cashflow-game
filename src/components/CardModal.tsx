@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 
 export const CardModal = () => {
   const { activeCard, resolveCard } = useGameStore();
+  const [sharesToBuy, setSharesToBuy] = useState(10);
 
   if (!activeCard) return null;
 
@@ -16,23 +18,24 @@ export const CardModal = () => {
       zIndex: 1000,
       backdropFilter: 'blur(4px)'
     }}>
-      <div className="glass-panel" style={{
-        backgroundColor: activeCard.type === 'DOODAD' ? '#fff5f5' : '#f0fff4',
-        border: `2px solid ${activeCard.type === 'DOODAD' ? '#fc8181' : '#68d391'}`,
+      <div className="glass-panel animate-slide-up" style={{
+        backgroundColor: 'var(--color-bg-card)',
+        border: `1px solid ${activeCard.type === 'DOODAD' ? 'rgba(255, 23, 68, 0.5)' : activeCard.type === 'MARKET' ? 'rgba(41, 121, 255, 0.5)' : 'rgba(0, 230, 118, 0.5)'}`,
         padding: '2rem',
-        borderRadius: '16px',
+        borderRadius: '20px',
         width: '350px',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        boxShadow: `0 20px 40px rgba(0, 0, 0, 0.6), inset 0 0 20px ${activeCard.type === 'DOODAD' ? 'rgba(255, 23, 68, 0.1)' : activeCard.type === 'MARKET' ? 'rgba(41, 121, 255, 0.1)' : 'rgba(0, 230, 118, 0.1)'}`,
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem'
       }}>
-        <div style={{ textAlign: 'center', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '1rem' }}>
+        <div style={{ textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
           <div style={{ 
-            fontSize: '0.8rem', 
+            fontSize: '0.85rem', 
             fontWeight: 800, 
-            color: activeCard.type === 'DOODAD' ? '#e53e3e' : '#38a169',
-            letterSpacing: '1px'
+            color: activeCard.type === 'DOODAD' ? 'var(--color-danger)' : activeCard.type === 'MARKET' ? 'var(--color-blue)' : 'var(--color-success)',
+            letterSpacing: '2px',
+            textTransform: 'uppercase'
           }}>
             {activeCard.type.replace('_', ' ')}
           </div>
@@ -50,14 +53,32 @@ export const CardModal = () => {
           </div>
         )}
         
-        {activeCard.downPayment !== undefined && (
+        {activeCard.downPayment !== undefined && activeCard.assetType !== 'STOCK' && (
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
             <span>Down Payment:</span>
             <span>${activeCard.downPayment.toLocaleString()}</span>
           </div>
         )}
 
-        {activeCard.cashflow !== undefined && activeCard.cashflow > 0 && (
+        {activeCard.assetType === 'STOCK' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+              <span>Shares to Buy:</span>
+              <input 
+                type="number" 
+                value={sharesToBuy} 
+                onChange={e => setSharesToBuy(Math.max(0, parseInt(e.target.value) || 0))}
+                style={{ width: '80px', textAlign: 'right', background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', padding: '2px 5px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: 'var(--color-primary)' }}>
+              <span>Total Cost:</span>
+              <span>${((activeCard.cost || 0) * sharesToBuy).toLocaleString()}</span>
+            </div>
+          </div>
+        )}
+
+        {activeCard.cashflow !== undefined && activeCard.cashflow > 0 && activeCard.assetType !== 'STOCK' && (
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: 'var(--color-success)' }}>
             <span>Cashflow:</span>
             <span>+${activeCard.cashflow.toLocaleString()}</span>
@@ -107,20 +128,25 @@ export const CardModal = () => {
                 const state = useGameStore.getState();
                 const player = state.players[state.currentPlayerIndex];
                 
-                if (activeCard.downPayment !== undefined && player.statement.cash >= activeCard.downPayment) {
+                let totalCost = activeCard.downPayment;
+                if (activeCard.assetType === 'STOCK') {
+                  totalCost = (activeCard.cost || 0) * sharesToBuy;
+                }
+
+                if (totalCost !== undefined && player.statement.cash >= totalCost) {
                   state.buyAsset(player.id, {
                     id: activeCard.id + Date.now(),
-                    name: activeCard.title,
+                    name: activeCard.assetType === 'STOCK' ? `${activeCard.title} (${sharesToBuy} sh)` : activeCard.title,
                     type: activeCard.assetType || 'BUSINESS',
-                    cost: activeCard.cost || 0,
-                    downPayment: activeCard.downPayment,
+                    cost: activeCard.assetType === 'STOCK' ? (activeCard.cost || 0) : (activeCard.cost || 0),
+                    downPayment: totalCost,
                     cashflow: activeCard.cashflow || 0,
-                    shares: activeCard.assetType === 'STOCK' ? Math.floor(activeCard.downPayment / (activeCard.cost || 1)) : undefined,
+                    shares: activeCard.assetType === 'STOCK' ? sharesToBuy : undefined,
                     dividend: activeCard.assetType === 'STOCK' ? activeCard.cashflow : undefined
                   });
                   resolveCard();
                 } else {
-                  alert('Not enough cash for the down payment!');
+                  alert('Not enough cash!');
                 }
               }}
             >

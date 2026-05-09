@@ -55,7 +55,6 @@ export const playBotTurn = async (playerId: string) => {
     if (card.cost) {
       // Create a temporary liability id to pay immediately
       // To simulate this in the current engine, we just deduct cash
-      const draftStatement = { ...updatedPlayer.statement, cash: updatedPlayer.statement.cash - card.cost };
       // Note: A true bot might go bankrupt here, but for now we just deduct cash directly.
       // Since it's an internal utility, we can update via the store later, 
       // but for V1 we just log it. (Fully integrating bot doodad payments requires store actions)

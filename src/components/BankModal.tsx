@@ -40,21 +40,22 @@ export const BankModal = ({ onClose }: { onClose: () => void }) => {
       backdropFilter: 'blur(5px)'
     }}>
       <div className="glass-panel animate-slide-up" style={{
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--color-bg-card)',
         padding: '2rem',
-        borderRadius: '16px',
+        borderRadius: '20px',
         width: '400px',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 229, 255, 0.05)',
       }}>
-        <div style={{ display: 'flex', borderBottom: '1px solid #eee', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '1.5rem' }}>
           <button 
-            style={{ flex: 1, padding: '1rem', background: 'none', border: 'none', borderBottom: tab === 'LOAN' ? '3px solid #007bff' : '3px solid transparent', fontWeight: tab === 'LOAN' ? 800 : 500 }}
+            style={{ flex: 1, padding: '1rem', background: 'none', border: 'none', borderBottom: tab === 'LOAN' ? '3px solid var(--color-secondary)' : '3px solid transparent', fontWeight: tab === 'LOAN' ? 800 : 500, color: tab === 'LOAN' ? 'var(--color-secondary)' : 'var(--color-text-muted)' }}
             onClick={() => setTab('LOAN')}
           >
             Bank Loan
           </button>
           <button 
-            style={{ flex: 1, padding: '1rem', background: 'none', border: 'none', borderBottom: tab === 'BANKRUPTCY' ? '3px solid #dc3545' : '3px solid transparent', fontWeight: tab === 'BANKRUPTCY' ? 800 : 500, color: tab === 'BANKRUPTCY' ? '#dc3545' : 'inherit' }}
+            style={{ flex: 1, padding: '1rem', background: 'none', border: 'none', borderBottom: tab === 'BANKRUPTCY' ? '3px solid var(--color-danger)' : '3px solid transparent', fontWeight: tab === 'BANKRUPTCY' ? 800 : 500, color: tab === 'BANKRUPTCY' ? 'var(--color-danger)' : 'var(--color-text-muted)' }}
             onClick={() => setTab('BANKRUPTCY')}
           >
             Bankruptcy
@@ -69,24 +70,24 @@ export const BankModal = ({ onClose }: { onClose: () => void }) => {
             </p>
             
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>Loan Amount</label>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text-main)' }}>Loan Amount</label>
               <input 
                 type="number" 
                 value={loanAmount} 
                 onChange={(e) => setLoanAmount(Number(e.target.value))}
                 step={1000}
                 min={1000}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', fontSize: '1.2rem' }}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', backgroundColor: 'rgba(0,0,0,0.3)', color: 'white', fontSize: '1.2rem', fontFamily: 'var(--font-heading)' }}
               />
             </div>
 
-            <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <span>Cash Received:</span>
+            <div style={{ padding: '1.2rem', backgroundColor: 'rgba(0, 229, 255, 0.05)', border: '1px solid rgba(0, 229, 255, 0.2)', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem', fontSize: '0.9rem' }}>
+                <span style={{ color: 'var(--color-text-main)' }}>Cash Received:</span>
                 <span style={{ fontWeight: 800, color: 'var(--color-success)' }}>+${loanAmount.toLocaleString()}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Monthly Interest:</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                <span style={{ color: 'var(--color-text-main)' }}>Monthly Interest:</span>
                 <span style={{ fontWeight: 800, color: 'var(--color-danger)' }}>-${(loanAmount * 0.1).toLocaleString()}</span>
               </div>
             </div>
@@ -100,19 +101,19 @@ export const BankModal = ({ onClose }: { onClose: () => void }) => {
 
         {tab === 'BANKRUPTCY' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'center' }}>
-            <h3 style={{ color: '#dc3545', margin: 0 }}>Declare Bankruptcy</h3>
+            <h3 style={{ color: 'var(--color-danger)', margin: 0, textShadow: 'var(--shadow-neon-danger)' }}>Declare Bankruptcy</h3>
             <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
               If your expenses exceed your income and you cannot pay your debts, you must declare bankruptcy.
             </p>
-            <ul style={{ textAlign: 'left', fontSize: '0.85rem', color: '#555', backgroundColor: '#fff5f5', padding: '1rem', borderRadius: '8px' }}>
-              <li style={{ marginBottom: '0.5rem' }}>You must sell all assets at 1/2 their original down payment or cost.</li>
-              <li style={{ marginBottom: '0.5rem' }}>The bank takes the cash to pay off your debts (Bank Loans first, then others).</li>
+            <ul style={{ textAlign: 'left', fontSize: '0.85rem', color: 'var(--color-text-main)', backgroundColor: 'rgba(255, 23, 68, 0.1)', border: '1px solid rgba(255, 23, 68, 0.3)', padding: '1.5rem', borderRadius: '12px' }}>
+              <li style={{ marginBottom: '0.8rem' }}>You must sell all assets at 1/2 their original down payment or cost.</li>
+              <li style={{ marginBottom: '0.8rem' }}>The bank takes the cash to pay off your debts (Bank Loans first, then others).</li>
               <li>You lose your next 3 turns.</li>
             </ul>
             
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              <button className="btn" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-              <button className="btn btn-pop" style={{ flex: 2, backgroundColor: '#dc3545', color: '#fff' }} onClick={handleDeclareBankruptcy}>
+              <button className="btn" style={{ flex: 1, backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)' }} onClick={onClose}>Cancel</button>
+              <button className="btn btn-pop" style={{ flex: 2, background: 'linear-gradient(135deg, #FF1744, #D50000)', color: '#fff', boxShadow: '0 0 15px rgba(255, 23, 68, 0.5)' }} onClick={handleDeclareBankruptcy}>
                 Declare Bankruptcy
               </button>
             </div>
