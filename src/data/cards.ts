@@ -13,13 +13,18 @@ export interface GameCard {
   assetType?: Asset['type'];
   roi?: string;
   actionText: string;
+  isGlobal?: boolean;
+  marketEvent?: {
+    type: 'STOCK_SPLIT' | 'REVERSE_SPLIT';
+    symbol: string;
+  };
 }
 
 export const SMALL_DEALS: GameCard[] = [
   { id: 'sd_1', type: 'SMALL_DEAL', title: 'House for Sale - 3Br/2Ba', description: 'Bank foreclosed property. Needs some work but good rental potential.', cost: 50000, downPayment: 5000, cashflow: 160, assetType: 'REAL_ESTATE', roi: '38%', actionText: 'Buy' },
   { id: 'sd_2', type: 'SMALL_DEAL', title: 'Stock: OK4U', description: 'A stable company. Only you may buy at this price.', cost: 10, downPayment: 10, cashflow: 0, assetType: 'STOCK', actionText: 'Buy Shares' },
   { id: 'sd_3', type: 'SMALL_DEAL', title: 'Condo for Sale - 2Br/1Ba', description: 'Parents selling to help kids. Good neighborhood.', cost: 45000, downPayment: 4000, cashflow: 140, assetType: 'REAL_ESTATE', roi: '42%', actionText: 'Buy' },
-  { id: 'sd_4', type: 'SMALL_DEAL', title: 'Stock: MYT4U', description: 'Tech startup stock splits 2-for-1 today.', cost: 5, downPayment: 5, cashflow: 0, assetType: 'STOCK', actionText: 'Buy Shares' },
+  { id: 'sd_4', type: 'SMALL_DEAL', title: 'Stock: MYT4U', description: 'Tech startup stock at a low price.', cost: 5, downPayment: 5, cashflow: 0, assetType: 'STOCK', actionText: 'Buy Shares' },
   { id: 'sd_5', type: 'SMALL_DEAL', title: 'Mutual Fund: GRO4US', description: 'Steady growth mutual fund.', cost: 10, downPayment: 10, cashflow: 0, assetType: 'STOCK', actionText: 'Buy Shares' },
   { id: 'sd_6', type: 'SMALL_DEAL', title: 'House for Sale - 3Br/2Ba', description: 'Seller motivated, transferring out of town.', cost: 65000, downPayment: 3000, cashflow: -100, assetType: 'REAL_ESTATE', roi: '-40%', actionText: 'Buy (Capital Gains Only)' },
   { id: 'sd_7', type: 'SMALL_DEAL', title: 'Coin: 1oz Gold', description: 'Gold prices are low. Good hedge against inflation.', cost: 300, downPayment: 300, cashflow: 0, assetType: 'COIN', actionText: 'Buy Gold' },
@@ -65,16 +70,16 @@ export const DOODADS: GameCard[] = [
 ];
 
 export const MARKET: GameCard[] = [
-  { id: 'm_1', type: 'MARKET', title: 'Real Estate Boom', description: 'Housing prices soar. You may sell any 3Br/2Ba house for $135,000.', cost: 135000, assetType: 'REAL_ESTATE', actionText: 'Check Assets' },
-  { id: 'm_2', type: 'MARKET', title: 'Condo Buyers', description: 'Retirees looking for condos. You may sell any 2Br/1Ba condo for $65,000.', cost: 65000, assetType: 'REAL_ESTATE', actionText: 'Check Assets' },
-  { id: 'm_3', type: 'MARKET', title: 'OK4U Stock Buyout', description: 'Company acquired. Everyone must sell OK4U shares for $50.', cost: 50, assetType: 'STOCK', actionText: 'Check Assets' },
-  { id: 'm_4', type: 'MARKET', title: 'Apartment Buyers', description: 'Investors want multi-family. You may sell any Apartment House for $40,000 per unit.', cost: 40000, assetType: 'REAL_ESTATE', actionText: 'Check Assets' },
-  { id: 'm_5', type: 'MARKET', title: 'Business Expansion', description: 'Corporate buyer wants your business. You may sell any Business for 3x its original cost.', cost: 3, assetType: 'BUSINESS', actionText: 'Check Assets' },
-  { id: 'm_6', type: 'MARKET', title: 'Inflation', description: 'Gold prices hit record highs. You may sell 1oz Gold coins for $800 each.', cost: 800, assetType: 'COIN', actionText: 'Check Assets' },
-  { id: 'm_7', type: 'MARKET', title: 'MYT4U Stock Crash', description: 'Tech bubble bursts. MYT4U shares drop. (No action needed, just market info)', cost: 0, assetType: 'STOCK', actionText: 'Check Assets' },
-  { id: 'm_8', type: 'MARKET', title: 'Real Estate Crash', description: 'Market cools off. (No action needed, just market info)', cost: 0, assetType: 'REAL_ESTATE', actionText: 'Check Assets' },
-  { id: 'm_9', type: 'MARKET', title: 'Plex Buyers', description: 'Demand for 4-Plexes. Sell any 4-Unit Apartment for $200,000.', cost: 200000, assetType: 'REAL_ESTATE', actionText: 'Check Assets' },
-  { id: 'm_10', type: 'MARKET', title: 'ON2U Stock Surges', description: 'Hit movie release! Everyone may sell ON2U shares for $40.', cost: 40, assetType: 'STOCK', actionText: 'Check Assets' }
+  { id: 'm_1', type: 'MARKET', title: 'Real Estate Boom', description: 'Housing prices soar. You may sell any 3Br/2Ba house for $135,000.', cost: 135000, assetType: 'REAL_ESTATE', actionText: 'Sell Asset' },
+  { id: 'm_2', type: 'MARKET', title: 'Condo Buyers', description: 'Retirees looking for condos. You may sell any 2Br/1Ba condo for $65,000.', cost: 65000, assetType: 'REAL_ESTATE', actionText: 'Sell Asset' },
+  { id: 'm_3', type: 'MARKET', title: 'OK4U Stock Buyout', description: 'Company acquired. Everyone must sell OK4U shares for $50.', cost: 50, assetType: 'STOCK', actionText: 'Execute Sale', isGlobal: true },
+  { id: 'm_4', type: 'MARKET', title: 'Apartment Buyers', description: 'Investors want multi-family. You may sell any Apartment House for $40,000 per unit.', cost: 40000, assetType: 'REAL_ESTATE', actionText: 'Sell Asset' },
+  { id: 'm_5', type: 'MARKET', title: 'Business Expansion', description: 'Corporate buyer wants your business. You may sell any Business for 3x its original cost.', cost: 3, assetType: 'BUSINESS', actionText: 'Sell Asset' },
+  { id: 'm_6', type: 'MARKET', title: 'Inflation', description: 'Gold prices hit record highs. You may sell 1oz Gold coins for $800 each.', cost: 800, assetType: 'COIN', actionText: 'Sell Asset' },
+  { id: 'm_7', type: 'MARKET', title: 'MYT4U Stock Split', description: 'Tech giant MYT4U splits 2-for-1! Everyone doubles their shares.', cost: 0, actionText: 'Execute Split', isGlobal: true, marketEvent: { type: 'STOCK_SPLIT', symbol: 'MYT4U' } },
+  { id: 'm_8', type: 'MARKET', title: 'OK4U Reverse Split', description: 'OK4U struggles. 1-for-10 reverse split. Everyone loses 90% of shares.', cost: 0, actionText: 'Execute Split', isGlobal: true, marketEvent: { type: 'REVERSE_SPLIT', symbol: 'OK4U' } },
+  { id: 'm_9', type: 'MARKET', title: 'Plex Buyers', description: 'Demand for 4-Plexes. Sell any 4-Unit Apartment for $200,000.', cost: 200000, assetType: 'REAL_ESTATE', actionText: 'Sell Asset' },
+  { id: 'm_10', type: 'MARKET', title: 'ON2U Stock Surges', description: 'Hit movie release! Everyone may sell ON2U shares for $40.', cost: 40, assetType: 'STOCK', actionText: 'Execute Sale', isGlobal: true }
 ];
 
 export const ALL_CARDS = { SMALL_DEALS, BIG_DEALS, DOODADS, MARKET };

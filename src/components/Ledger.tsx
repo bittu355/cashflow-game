@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { BankModal } from './BankModal';
+import { DREAMS } from '../data/fastTrack';
+import { AuditLog } from './AuditLog';
+import { FinancialControls } from './FinancialControls';
 
 export const Ledger = () => {
-  const { players, currentPlayerIndex, haveChild } = useGameStore();
+  const { players, currentPlayerIndex, haveChild, enterFastTrack, resetGame } = useGameStore();
   const [isBankModalOpen, setBankModalOpen] = useState(false);
 
   const player = players[currentPlayerIndex];
@@ -11,143 +14,274 @@ export const Ledger = () => {
   if (!player) return <div className="ledger-area glass-panel" style={{ padding: '2rem' }}>No player active.</div>;
 
   const { statement } = player;
+  const canEscapeRatRace = player.phase === 'RAT_RACE' && statement.passiveIncome >= statement.totalExpenses;
+
+  // Group Assets by Type
+  const realEstate = statement.assets.filter(a => a.type === 'REAL_ESTATE');
+  const stocks = statement.assets.filter(a => a.type === 'STOCK');
+  const businesses = statement.assets.filter(a => a.type === 'BUSINESS');
+
+  const renderRatRaceLedger = () => (
+    <div className="ledger-grid">
+      {/* 1. INCOME */}
+      <div className="quadrant income-quad">
+        <h3 className="pencil-text section-title">Income</h3>
+        <div className="ledger-row"><span>Salary</span> <span className="value">${statement.salary.toLocaleString()}</span></div>
+        <div className="ledger-row divider"><span>Passive Income</span> <span className="value">${statement.passiveIncome.toLocaleString()}</span></div>
+        <div className="ledger-row total"><span>Total Income</span> <span className="value">${statement.totalIncome.toLocaleString()}</span></div>
+      </div>
+
+      {/* 2. EXPENSES */}
+      <div className="quadrant expense-quad">
+        <h3 className="pencil-text section-title">Expenses</h3>
+        <div className="ledger-row"><span>Taxes</span> <span className="value">${statement.taxes.toLocaleString()}</span></div>
+        <div className="ledger-row"><span>Other Expenses</span> <span className="value">${statement.otherExpenses.toLocaleString()}</span></div>
+        <div className="ledger-row"><span>Children ({statement.children})</span> <span className="value">${statement.childExpenses.toLocaleString()}</span></div>
+        <div className="ledger-row divider"><span>Liabilities Pmt</span> <span className="value">${(statement.totalExpenses - statement.taxes - statement.otherExpenses - statement.childExpenses).toLocaleString()}</span></div>
+        <div className="ledger-row total"><span>Total Expenses</span> <span className="value danger">${statement.totalExpenses.toLocaleString()}</span></div>
+      </div>
+
+      {/* 3. ASSETS */}
+      <div className="quadrant asset-quad">
+        <h3 className="pencil-text section-title">Assets</h3>
+        {realEstate.length > 0 && <div className="asset-group">
+          <label>Real Estate</label>
+          {realEstate.map((a, i) => <div key={i} className="ledger-row small"><span>{a.name}</span> <span>+${a.cashflow}</span></div>)}
+        </div>}
+        {stocks.length > 0 && <div className="asset-group">
+          <label>Stocks/Mutual Funds</label>
+          {stocks.map((a, i) => <div key={i} className="ledger-row small"><span>{a.name} ({a.shares})</span> <span>+${(a.cashflow).toLocaleString()}</span></div>)}
+        </div>}
+        {businesses.length > 0 && <div className="asset-group">
+          <label>Businesses</label>
+          {businesses.map((a, i) => <div key={i} className="ledger-row small"><span>{a.name}</span> <span>+${a.cashflow}</span></div>)}
+        </div>}
+        {statement.assets.length === 0 && <p className="pencil-text empty-msg">No assets yet...</p>}
+      </div>
+
+      {/* 4. LIABILITIES */}
+      <div className="quadrant liability-quad">
+        <h3 className="pencil-text section-title">Liabilities</h3>
+        <div className="liability-list">
+          {statement.liabilities.map(l => (
+            <div key={l.id} className="liability-item">
+              <div className="ledger-row small">
+                <span>{l.name}</span>
+                <span>${l.amount.toLocaleString()}</span>
+              </div>
+              <div className="item-actions">
+                {statement.cash >= l.amount && (
+                  <button className="btn-pay-small" onClick={() => useGameStore.getState().payLoan(player.id, l.id)}>Pay Off</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <style jsx>{`
+        .ledger-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto auto;
+          gap: 1.5rem;
+          margin-top: 1rem;
+        }
+        @media (max-width: 600px) {
+          .ledger-grid { grid-template-columns: 1fr; }
+        }
+        .quadrant {
+          padding: 1rem;
+          background: rgba(0,0,0,0.2);
+          border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.05);
+        }
+        .section-title {
+          font-size: 1.2rem;
+          color: var(--color-primary);
+          border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+          margin-bottom: 0.8rem;
+          padding-bottom: 0.2rem;
+        }
+        .ledger-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.95rem;
+          margin-bottom: 0.4rem;
+        }
+        .ledger-row.small { font-size: 0.8rem; opacity: 0.8; }
+        .ledger-row.divider { border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 0.8rem; padding-top: 0.8rem; }
+        .ledger-row.total { font-weight: 800; font-size: 1rem; }
+        .value { color: var(--color-text-main); }
+        .value.danger { color: var(--color-danger); }
+        .asset-group label { display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--color-text-muted); margin-top: 0.8rem; }
+        .empty-msg { font-size: 0.8rem; opacity: 0.5; text-align: center; padding: 1rem; }
+        .liability-item { background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 8px; margin-bottom: 0.5rem; }
+        .item-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.2rem; }
+        .btn-pay-small { 
+          background: var(--color-danger) !important; 
+          color: white !important; 
+          border: none; 
+          padding: 0.3rem 0.6rem; 
+          font-size: 0.7rem; 
+          border-radius: 6px; 
+          cursor: pointer; 
+          font-weight: 800;
+          transition: transform 0.1s;
+        }
+        .btn-pay-small:hover { transform: scale(1.05); filter: brightness(1.2); }
+      `}</style>
+    </div>
+  );
+
+  const renderFastTrackLedger = () => {
+    const dream = DREAMS.find(d => d.id === player.dreamId);
+    return (
+      <div className="fast-track-ledger">
+        <div className="target-card glass-panel">
+          <h3 className="pencil-text">Fast Track Target</h3>
+          <div className="big-value">${player.fastTrackTarget.toLocaleString()}</div>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${Math.min(100, ((statement.fastTrackStartingIncome! + player.fastTrackCashflow) / player.fastTrackTarget) * 100)}%` }} />
+          </div>
+          <p className="pencil-text">Current: ${(statement.fastTrackStartingIncome! + player.fastTrackCashflow).toLocaleString()}</p>
+        </div>
+
+        {dream && (
+          <div className="dream-card quadrant" style={{ marginTop: '1.5rem' }}>
+            <h3 className="pencil-text" style={{color: '#e83e8c'}}>Your Dream</h3>
+            <div style={{fontSize: '1.2rem', fontWeight: 800}}>{dream.name}</div>
+            <p className="pencil-text" style={{fontSize: '0.9rem'}}>{dream.description}</p>
+            <div className="cost">Cost: ${(dream.cost/1000)}k</div>
+          </div>
+        )}
+
+        {player.fastTrackBusinesses.length > 0 && (
+          <div className="portfolio-card glass-panel" style={{ marginTop: '1.5rem', textAlign: 'left' }}>
+            <h3 className="pencil-text" style={{ fontSize: '0.9rem', opacity: 0.7 }}>Business Portfolio</h3>
+            <div className="portfolio-list">
+              {player.fastTrackBusinesses.map((b, i) => (
+                <div key={i} className="portfolio-item">
+                  <span>{b.name}</span>
+                  <span className="success">+${b.cashflow.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <style jsx>{`
+          .fast-track-ledger { display: flex; flexDirection: column; gap: 1rem; }
+          .target-card { padding: 1.5rem; text-align: center; }
+          .big-value { font-size: 2.5rem; font-weight: 800; color: var(--color-primary); }
+          .progress-bar { background: rgba(0,0,0,0.3); height: 12px; border-radius: 6px; margin: 1rem 0; overflow: hidden; }
+          .progress-fill { background: var(--color-primary); height: 100%; transition: width 0.5s ease; }
+          .dream-card .cost { font-weight: 800; color: #e83e8c; margin-top: 0.5rem; }
+          .portfolio-item { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+          .portfolio-item .success { color: var(--color-success); font-weight: 800; }
+        `}</style>
+      </div>
+    );
+  };
 
   return (
-    <div className="ledger-area glass-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '1.5rem', gap: '1.5rem' }}>
+    <div className="ledger-area glass-panel animate-slide-up" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '1.5rem', gap: '1.5rem' }}>
       
-      {/* Header */}
-      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.8rem', color: 'var(--color-primary)', textShadow: 'var(--shadow-neon-primary)' }}>{player.name}'s Ledger</h2>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem', fontWeight: 600 }}>{player.profession?.name}</p>
-        
-        <div style={{ marginTop: '1.5rem' }}>
-          <button className="btn btn-secondary btn-pop" style={{ width: '100%', padding: '0.8rem', fontWeight: 800 }} onClick={() => setBankModalOpen(true)}>
-            🏦 Visit Bank (Loans / Bankruptcy)
+      <div className="ledger-header">
+        <div className="header-top">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <div className="avatar-circle" style={{ backgroundColor: player.color }}>
+               {player.profession?.name.includes('Doctor') ? '🩺' : 
+                player.profession?.name.includes('Lawyer') ? '⚖️' : 
+                player.profession?.name.includes('Teacher') ? '📚' : 
+                player.profession?.name.includes('Janitor') ? '🧹' : 
+                player.profession?.name.includes('Pilot') ? '✈️' : 
+                player.profession?.name.includes('Manager') ? '💼' : '👤'}
+            </div>
+            <div>
+              <h2 style={{ margin: 0, color: player.phase === 'FAST_TRACK' ? '#e83e8c' : 'var(--color-primary)' }}>
+                {player.name} {player.phase === 'FAST_TRACK' && '🚀'}
+              </h2>
+              <span className="pencil-text" style={{ fontSize: '0.8rem' }}>{player.profession?.name}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="cash-summary">
+          <div className="summary-item">
+            <label className="pencil-text">Cash</label>
+            <div className="value success">${statement.cash.toLocaleString()}</div>
+          </div>
+          <div className="summary-item right">
+            <label className="pencil-text">{player.phase === 'FAST_TRACK' ? 'Cashflow Day' : 'Payday'}</label>
+            <div className="value">${(player.phase === 'FAST_TRACK' ? (statement.fastTrackStartingIncome! + player.fastTrackCashflow) : statement.monthlyCashFlow).toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div className="wealth-meter-container">
+          <div className="pencil-text label">Wealth Progress (Passive Income vs Expenses)</div>
+          <div className="wealth-track">
+            <div 
+              className="wealth-progress" 
+              style={{ 
+                width: `${Math.min(100, (statement.passiveIncome / statement.totalExpenses) * 100)}%`,
+                backgroundColor: statement.passiveIncome >= statement.totalExpenses ? 'var(--color-success)' : 'var(--color-primary)'
+              }} 
+            />
+          </div>
+          <div className="wealth-stats">
+            <span>${statement.passiveIncome.toLocaleString()}</span>
+            <span>/</span>
+            <span>${statement.totalExpenses.toLocaleString()}</span>
+          </div>
+        </div>
+
+        {canEscapeRatRace && (
+          <button className="btn btn-primary btn-pop escape-btn" onClick={() => enterFastTrack(player.id)}>
+            🚀 ESCAPE THE RAT RACE!
           </button>
-        </div>
+        )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem', padding: '1.2rem', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Cash</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-success)', textShadow: 'var(--shadow-neon-success)' }}>${statement.cash.toLocaleString()}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Payday</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-primary)', textShadow: 'var(--shadow-neon-primary)' }}>${statement.monthlyCashFlow.toLocaleString()}</div>
-          </div>
+        <div className="header-actions">
+           <button className="btn btn-secondary small" onClick={() => setBankModalOpen(true)}>🏦 Bank</button>
+           <button className="btn btn-secondary small" onClick={() => haveChild(player.id)}>👶 +1 Child ({statement.children}/3)</button>
         </div>
       </div>
 
-      {/* Income / Expenses Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div style={{ padding: '1.2rem', background: 'rgba(0, 230, 118, 0.05)', borderRadius: '16px', border: '1px solid rgba(0, 230, 118, 0.2)' }}>
-          <h4 style={{ color: 'var(--color-success)', marginBottom: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.85rem' }}>Income</h4>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--color-text-main)' }}>
-            <span style={{ color: 'var(--color-text-muted)' }}>Salary:</span> <span>${statement.salary.toLocaleString()}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--color-text-main)' }}>
-            <span style={{ color: 'var(--color-text-muted)' }}>Passive:</span> <span>${statement.passiveIncome.toLocaleString()}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginTop: '0.8rem', paddingTop: '0.8rem', borderTop: '1px solid rgba(0, 230, 118, 0.2)' }}>
-            <span>Total:</span> <span style={{ color: 'var(--color-success)' }}>${statement.totalIncome.toLocaleString()}</span>
-          </div>
-        </div>
+      {player.phase === 'RAT_RACE' ? renderRatRaceLedger() : renderFastTrackLedger()}
 
-        <div style={{ padding: '1.2rem', background: 'rgba(255, 23, 68, 0.05)', borderRadius: '16px', border: '1px solid rgba(255, 23, 68, 0.2)' }}>
-          <h4 style={{ color: 'var(--color-danger)', marginBottom: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.85rem' }}>Expenses</h4>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--color-text-main)' }}>
-            <span style={{ color: 'var(--color-text-muted)' }}>Taxes:</span> <span>${statement.taxes.toLocaleString()}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--color-text-main)' }}>
-            <span style={{ color: 'var(--color-text-muted)' }}>Children ({statement.children}):</span> <span>${statement.childExpenses.toLocaleString()}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--color-text-main)' }}>
-            <span style={{ color: 'var(--color-text-muted)' }}>Liabilities:</span> <span>${(statement.totalExpenses - statement.taxes - statement.otherExpenses - statement.childExpenses).toLocaleString()}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginTop: '0.8rem', paddingTop: '0.8rem', borderTop: '1px solid rgba(255, 23, 68, 0.2)' }}>
-            <span>Total:</span> <span style={{ color: 'var(--color-danger)' }}>${statement.totalExpenses.toLocaleString()}</span>
-          </div>
-        </div>
+      {/* Financial Actions (Borrowing/Repayment) */}
+      <FinancialControls />
+
+      {/* Footer / Debug */}
+      <div className="ledger-footer">
+        <button className="reset-link" onClick={resetGame}>Reset Game Data</button>
       </div>
 
-      {/* Assets & Liabilities Details */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '0.5rem' }}>
-        <div>
-          <h3 style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', marginBottom: '1rem', fontSize: '1.1rem', color: 'var(--color-secondary)' }}>Liabilities</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {statement.liabilities.map(l => (
-              <div key={l.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.5rem 1rem', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                  <span style={{ color: 'var(--color-text-main)' }}>{l.name}</span>
-                  <span>${l.amount.toLocaleString()} <span style={{ color: 'var(--color-danger)' }}>(-${l.payment})</span></span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.25rem' }}>
-                  {l.id === 'bank_loan' && player.statement.cash >= 1000 && (
-                    <button 
-                      className="btn btn-pop" 
-                      style={{ backgroundColor: '#17a2b8', color: 'white', padding: '0.2rem 0.5rem', fontSize: '0.75rem', borderRadius: '4px' }}
-                      onClick={() => useGameStore.getState().payDebt(player.id, l.id, 1000)}
-                    >
-                      Pay $1k
-                    </button>
-                  )}
-                  {player.statement.cash >= l.amount && (
-                    <button 
-                      className="btn btn-pop" 
-                      style={{ backgroundColor: '#28a745', color: 'white', padding: '0.2rem 0.5rem', fontSize: '0.75rem', borderRadius: '4px' }}
-                      onClick={() => useGameStore.getState().payDebt(player.id, l.id)}
-                    >
-                      Pay Off
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Audit Log / History */}
+      <AuditLog />
 
-        <div>
-          <h3 style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', marginBottom: '1rem', fontSize: '1.1rem', color: 'var(--color-success)' }}>Assets</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {statement.assets.length === 0 ? (
-               <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', fontStyle: 'italic', padding: '0.5rem 1rem' }}>No assets yet. Time to invest!</p>
-            ) : (
-              statement.assets.map((a, index) => (
-                <div key={`${a.id}-${index}`} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.5rem 1rem', borderRadius: '8px' }}>
-                  <span style={{ color: 'var(--color-text-main)' }}>{a.name}</span>
-                  <span style={{ color: 'var(--color-success)', fontWeight: 800 }}>+${a.cashflow || (a.shares! * a.dividend!) || 0}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
+      <BankModal isOpen={isBankModalOpen} onClose={() => setBankModalOpen(false)} />
 
-      {/* Debug / Test Controls */}
-      <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--color-bg-main)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <h4 style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Debug Tools</h4>
-        <button className="btn btn-primary btn-pop" style={{ padding: '0.5rem', fontSize: '0.85rem' }} onClick={() => useGameStore.getState().payday(player.id)}>
-          Simulate Payday
-        </button>
-        <button className="btn btn-primary btn-pop" style={{ padding: '0.5rem', fontSize: '0.85rem' }} onClick={() => {
-          useGameStore.setState(s => ({
-            players: s.players.map(p => p.id === player.id ? { ...p, statement: { ...p.statement, cash: p.statement.cash + 50000 } } : p)
-          }))
-        }}>
-          Add $50,000 Cash
-        </button>
-        <button className="btn btn-success btn-pop" style={{ padding: '0.5rem', fontSize: '0.85rem' }} onClick={() => useGameStore.getState().buyAsset(player.id, { id: 'house1', name: '3Br/2Ba House', type: 'REAL_ESTATE', cost: 50000, downPayment: 5000, cashflow: 250 }, true)}>
-          Force Buy 3Br/2Ba (+$250 CF)
-        </button>
-        <button className="btn btn-primary btn-pop" style={{ padding: '0.5rem', fontSize: '0.85rem' }} onClick={() => haveChild(player.id)}>
-          Have Child ({statement.children}/3)
-        </button>
-        <button className="btn btn-pop" style={{ padding: '0.5rem', fontSize: '0.85rem', backgroundColor: '#dc3545', color: 'white' }} onClick={() => useGameStore.getState().resetGame()}>
-          Reset Game
-        </button>
-      </div>
-
-      {isBankModalOpen && <BankModal onClose={() => setBankModalOpen(false)} />}
+      <style jsx>{`
+        .ledger-header { border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem; }
+        .header-top { display: flex; justify-content: space-between; align-items: baseline; }
+        .cash-summary { display: flex; justify-content: space-between; margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 16px; }
+        .summary-item label { font-size: 0.8rem; display: block; }
+        .summary-item .value { font-size: 1.5rem; font-weight: 800; }
+        .value.success { color: var(--color-success); }
+        .escape-btn { width: 100%; margin-top: 1rem; font-size: 1.1rem; }
+        .wealth-meter-container { margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 12px; }
+        .wealth-meter-container .label { font-size: 0.7rem; margin-bottom: 0.5rem; text-align: center; }
+        .wealth-track { background: rgba(255,255,255,0.05); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem; }
+        .wealth-progress { height: 100%; transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .wealth-stats { display: flex; justify-content: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 800; opacity: 0.8; }
+        .avatar-circle { width: 44px; height: 44px; border-radius: 50%; display: flex; alignItems: center; justifyContent: center; font-size: 1.5rem; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .header-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .btn.small { padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 8px; flex: 1; }
+        .ledger-footer { margin-top: auto; padding-top: 1rem; opacity: 0.3; text-align: center; }
+        .reset-link { background: none; border: none; color: white; cursor: pointer; font-size: 0.7rem; text-decoration: underline; }
+      `}</style>
     </div>
   );
 };

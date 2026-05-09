@@ -1,160 +1,237 @@
-import { useState } from 'react';
-import { useGameStore } from '../store/gameStore';
+import type { Asset } from '../types/game';
+import { getEventTip } from '../data/tips';
+import { gameAudio } from '../utils/audio';
 
 export const CardModal = () => {
-  const { activeCard, resolveCard } = useGameStore();
+  const { activeCard, players, currentPlayerIndex, resolveCard, buyAsset, sellAsset, handleMarketEvent, transferDeal } = useGameStore();
   const [sharesToBuy, setSharesToBuy] = useState(10);
+  const [showPeerTrade, setShowPeerTrade] = useState(false);
+  const [targetPlayerId, setTargetPlayerId] = useState('');
+  const [tradeFee, setTradeFee] = useState(0);
 
-  if (!activeCard) return null;
+  const player = players[currentPlayerIndex];
+
+  if (!activeCard || !player) return null;
+
+  const eligibleAssets = player.statement.assets.filter(a => {
+    if (!activeCard.assetType) return false;
+    if (activeCard.assetType === 'REAL_ESTATE') {
+      // Logic for matching specific RE types (e.g. 3Br/2Ba)
+      return a.type === 'REAL_ESTATE' && activeCard.description.includes(a.name.split(' ')[0]); 
+    }
+    return a.type === activeCard.assetType;
+  });
+
+  const handleTrade = () => {
+    if (!targetPlayerId) return;
+    transferDeal(player.id, targetPlayerId, activeCard, tradeFee);
+    resolveCard();
+  };
+
+  const renderMarketAction = () => {
+    if (activeCard.marketEvent) {
+      return (
+        <button className="btn btn-primary btn-pop" style={{ width: '100%' }} onClick={() => {
+          handleMarketEvent(activeCard.marketEvent);
+          resolveCard();
+        }}>
+          {activeCard.actionText || 'Apply Event'}
+        </button>
+      );
+    }
+
+    // Find ALL players with eligible assets (for Global Market Events)
+    const playersWithAssets = players.map(p => ({
+      player: p,
+      assets: p.statement.assets.filter(a => {
+        if (!activeCard.assetType) return false;
+        if (activeCard.assetType === 'REAL_ESTATE') {
+          return a.type === 'REAL_ESTATE' && activeCard.description.toLowerCase().includes(a.name.split(' ')[0].toLowerCase());
+        }
+        return a.type === activeCard.assetType && (activeCard.title.includes(a.name) || a.name.includes(activeCard.title.split(' ')[0]));
+      })
+    })).filter(entry => entry.assets.length > 0);
+
+    return (
+      <div className="market-resolution">
+        <label className="pencil-text">Market Opportunity:</label>
+        {playersWithAssets.length > 0 ? playersWithAssets.map(entry => (
+          <div key={entry.player.id} className="player-market-group">
+            <div className="player-name-small" style={{ color: entry.player.color }}>{entry.player.name}'s Assets:</div>
+            {entry.assets.map(a => (
+              <div key={a.id} className="asset-sell-row">
+                <span>{a.name}</span>
+                <button className="btn btn-success small" onClick={() => {
+                  const price = activeCard.title.includes('3x') ? a.cost * 3 : activeCard.cost!;
+                  sellAsset(entry.player.id, a.id, price);
+                  // Don't resolve card yet, others might want to sell
+                }}>
+                  Sell for ${ (activeCard.title.includes('3x') ? a.cost * 3 : activeCard.cost!).toLocaleString() }
+                </button>
+              </div>
+            ))}
+          </div>
+        )) : <p className="pencil-text small">No one has matching assets.</p>}
+        <button className="btn btn-secondary" style={{ width: '100%', marginTop: '1rem' }} onClick={resolveCard}>Done</button>
+        <style jsx>{`
+          .player-market-group { margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; }
+          .player-name-small { font-size: 0.75rem; font-weight: 800; margin-bottom: 0.3rem; text-transform: uppercase; }
+        `}</style>
+      </div>
+    );
+  };
 
   return (
-    <div style={{
-      position: 'absolute',
-      top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      backdropFilter: 'blur(4px)'
-    }}>
-      <div className="glass-panel animate-slide-up" style={{
-        backgroundColor: 'var(--color-bg-card)',
-        border: `1px solid ${activeCard.type === 'DOODAD' ? 'rgba(255, 23, 68, 0.5)' : activeCard.type === 'MARKET' ? 'rgba(41, 121, 255, 0.5)' : 'rgba(0, 230, 118, 0.5)'}`,
-        padding: '2rem',
-        borderRadius: '20px',
-        width: '350px',
-        boxShadow: `0 20px 40px rgba(0, 0, 0, 0.6), inset 0 0 20px ${activeCard.type === 'DOODAD' ? 'rgba(255, 23, 68, 0.1)' : activeCard.type === 'MARKET' ? 'rgba(41, 121, 255, 0.1)' : 'rgba(0, 230, 118, 0.1)'}`,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem'
-      }}>
-        <div style={{ textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
-          <div style={{ 
-            fontSize: '0.85rem', 
-            fontWeight: 800, 
-            color: activeCard.type === 'DOODAD' ? 'var(--color-danger)' : activeCard.type === 'MARKET' ? 'var(--color-blue)' : 'var(--color-success)',
-            letterSpacing: '2px',
-            textTransform: 'uppercase'
-          }}>
-            {activeCard.type.replace('_', ' ')}
-          </div>
-          <h2 style={{ fontSize: '1.5rem', marginTop: '0.5rem', color: 'var(--color-text-main)' }}>{activeCard.title}</h2>
+    <div className="modal-overlay animate-fade-in">
+      <div className="card-container glass-panel animate-slide-up" data-type={activeCard.type}>
+        <div className="card-header">
+          <div className="card-badge">{activeCard.type.replace('_', ' ')}</div>
+          <h2 className="card-title">{activeCard.title}</h2>
         </div>
 
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem', lineHeight: 1.5 }}>
-          {activeCard.description}
-        </p>
-
-        {activeCard.cost && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
-            <span>Cost:</span>
-            <span>${activeCard.cost.toLocaleString()}</span>
-          </div>
-        )}
-        
-        {activeCard.downPayment !== undefined && activeCard.assetType !== 'STOCK' && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
-            <span>Down Payment:</span>
-            <span>${activeCard.downPayment.toLocaleString()}</span>
-          </div>
-        )}
-
-        {activeCard.assetType === 'STOCK' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
-              <span>Shares to Buy:</span>
-              <input 
-                type="number" 
-                value={sharesToBuy} 
-                onChange={e => setSharesToBuy(Math.max(0, parseInt(e.target.value) || 0))}
-                style={{ width: '80px', textAlign: 'right', background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', padding: '2px 5px' }}
-              />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: 'var(--color-primary)' }}>
-              <span>Total Cost:</span>
-              <span>${((activeCard.cost || 0) * sharesToBuy).toLocaleString()}</span>
-            </div>
-          </div>
-        )}
-
-        {activeCard.cashflow !== undefined && activeCard.cashflow > 0 && activeCard.assetType !== 'STOCK' && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: 'var(--color-success)' }}>
-            <span>Cashflow:</span>
-            <span>+${activeCard.cashflow.toLocaleString()}</span>
-          </div>
-        )}
-
-        <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-          <button 
-            className="btn btn-secondary btn-pop" 
-            style={{ flex: 1 }}
-            onClick={() => {
-              if (activeCard.type === 'DOODAD' && activeCard.cost) {
-                // For a doodad, we need to deduct cash directly or go bankrupt.
-                // Since Doodads aren't tracked as permanent liabilities unless we take a loan,
-                // we just pay it off directly from cash for now.
-                const state = useGameStore.getState();
-                const player = state.players[state.currentPlayerIndex];
-                if (player.statement.cash >= activeCard.cost) {
-                  // Direct cash deduction for doodads (using a hacky empty liability pay for now)
-                  // Actually, it's better to just do a custom store action, but for V1 we can 
-                  // simulate a direct state update.
-                  useGameStore.setState((s) => ({
-                    players: s.players.map((p, idx) => idx === s.currentPlayerIndex ? {
-                      ...p,
-                      statement: { ...p.statement, cash: p.statement.cash - activeCard.cost! }
-                    } : p)
-                  }));
-                  resolveCard();
-                } else {
-                  alert('Not enough cash! You must take a loan.');
-                  // Keep modal open so they can take a loan from ledger
-                }
-              } else {
-                // Pass on an opportunity
-                resolveCard();
-              }
-            }}
-          >
-            {activeCard.type === 'DOODAD' ? 'Pay' : 'Pass'}
-          </button>
+        <div className="card-content">
+          <p className="card-description">{activeCard.description}</p>
           
-          {activeCard.type !== 'DOODAD' && (
-            <button 
-              className="btn btn-primary btn-pop" 
-              style={{ flex: 1 }}
-              onClick={() => {
-                const state = useGameStore.getState();
-                const player = state.players[state.currentPlayerIndex];
-                
-                let totalCost = activeCard.downPayment;
-                if (activeCard.assetType === 'STOCK') {
-                  totalCost = (activeCard.cost || 0) * sharesToBuy;
-                }
+          {activeCard.cost !== undefined && activeCard.type !== 'MARKET' && (
+            <div className="stat-row">
+              <span className="label">Cost:</span>
+              <span className="value">${activeCard.cost.toLocaleString()}</span>
+            </div>
+          )}
 
-                if (totalCost !== undefined && player.statement.cash >= totalCost) {
-                  state.buyAsset(player.id, {
-                    id: activeCard.id + Date.now(),
-                    name: activeCard.assetType === 'STOCK' ? `${activeCard.title} (${sharesToBuy} sh)` : activeCard.title,
-                    type: activeCard.assetType || 'BUSINESS',
-                    cost: activeCard.assetType === 'STOCK' ? (activeCard.cost || 0) : (activeCard.cost || 0),
-                    downPayment: totalCost,
-                    cashflow: activeCard.cashflow || 0,
-                    shares: activeCard.assetType === 'STOCK' ? sharesToBuy : undefined,
-                    dividend: activeCard.assetType === 'STOCK' ? activeCard.cashflow : undefined
-                  });
-                  resolveCard();
-                } else {
-                  alert('Not enough cash!');
-                }
-              }}
-            >
-              {activeCard.actionText || 'Buy'}
-            </button>
+          {activeCard.assetType === 'STOCK' && activeCard.type !== 'MARKET' && (
+             <div className="stock-buy-input">
+                <label>Shares to Buy:</label>
+                <input type="number" value={sharesToBuy} onChange={e => setSharesToBuy(Math.max(1, +e.target.value))} />
+                <div className="total-cost">Total: ${(activeCard.cost! * sharesToBuy).toLocaleString()}</div>
+             </div>
+          )}
+
+          {activeCard.cashflow !== undefined && activeCard.type !== 'MARKET' && (
+            <div className="stat-row success">
+              <span className="label">Cashflow:</span>
+              <span className="value">+${activeCard.cashflow.toLocaleString()}</span>
+            </div>
           )}
         </div>
+
+        <div className="card-actions">
+          {activeCard.type === 'MARKET' ? renderMarketAction() : (
+            <>
+              <button className="btn btn-secondary flex-1" onClick={resolveCard}>
+                {activeCard.type === 'DOODAD' ? 'Pay' : 'Pass'}
+              </button>
+              
+              <button 
+                className="btn btn-primary flex-1"
+                onClick={() => {
+                  const cost = activeCard.assetType === 'STOCK' ? (activeCard.cost! * sharesToBuy) : (activeCard.downPayment || activeCard.cost || 0);
+                  if (player.statement.cash >= cost) {
+                    buyAsset(player.id, {
+                      id: `asset-${Date.now()}`,
+                      name: activeCard.assetType === 'STOCK' ? `${activeCard.title.split(':')[1]?.trim() || activeCard.title} (${sharesToBuy})` : activeCard.title,
+                      type: activeCard.assetType || 'BUSINESS',
+                      cost: activeCard.cost || 0,
+                      downPayment: activeCard.downPayment || activeCard.cost || 0,
+                      cashflow: activeCard.cashflow || 0,
+                      shares: activeCard.assetType === 'STOCK' ? sharesToBuy : undefined,
+                      dividend: activeCard.assetType === 'STOCK' ? activeCard.cashflow : undefined
+                    });
+                    resolveCard();
+                  } else {
+                    alert('Not enough cash! Borrow from bank.');
+                  }
+                }}
+              >
+                {activeCard.actionText || 'Buy'}
+              </button>
+            </>
+          )}
+        </div>
+
+        {(activeCard.type === 'SMALL_DEAL' || activeCard.type === 'BIG_DEAL') && (
+          <div className="peer-trade-section">
+            <button className="btn-link" onClick={() => setShowPeerTrade(!showPeerTrade)}>
+              {showPeerTrade ? '✕ Cancel Trade' : '🤝 Sell Deal to Peer'}
+            </button>
+            {showPeerTrade && (
+              <div className="trade-controls animate-fade-in">
+                <select value={targetPlayerId} onChange={e => setTargetPlayerId(e.target.value)}>
+                  <option value="">Select Player...</option>
+                  {players.filter(p => p.id !== player.id).map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <input type="number" placeholder="Fee ($)" onChange={e => setTradeFee(+e.target.value)} />
+                <button className="btn btn-success small" onClick={handleTrade} disabled={!targetPlayerId}>Transfer</button>
+                <button 
+                  className="btn btn-info small" 
+                  onClick={() => {
+                    if (!targetPlayerId) return;
+                    transferDeal(player.id, targetPlayerId, activeCard, 0, true);
+                    resolveCard();
+                  }} 
+                  disabled={!targetPlayerId}
+                >
+                  🤝 Partnership (50/50)
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="wealth-tip" style={{ 
+          marginTop: '1.5rem', 
+          padding: '0.8rem', 
+          backgroundColor: 'rgba(255,215,0,0.05)', 
+          borderRadius: '12px',
+          border: '1px solid rgba(255,215,0,0.2)',
+          fontSize: '0.8rem',
+          color: '#ffd700',
+          lineHeight: '1.4'
+        }}>
+          <span style={{ fontWeight: 800, textTransform: 'uppercase', marginRight: '0.5rem' }}>Wealth Tip:</span>
+          {getEventTip(activeCard.type)}
+        </div>
       </div>
+
+      <style jsx>{`
+        .modal-overlay {
+          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+          display: flex; align-items: center; justify-content: center; z-index: 2000;
+        }
+        .card-container {
+          background: var(--color-bg-card); width: 380px; padding: 2rem; border-radius: 24px;
+          border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+        }
+        .card-container[data-type="SMALL_DEAL"] { border-top: 8px solid var(--color-success); }
+        .card-container[data-type="BIG_DEAL"] { border-top: 8px solid var(--color-primary); }
+        .card-container[data-type="MARKET"] { border-top: 8px solid var(--color-blue); }
+        .card-container[data-type="DOODAD"] { border-top: 8px solid var(--color-danger); }
+
+        .card-badge { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--color-text-muted); font-weight: 800; }
+        .card-title { font-size: 1.6rem; margin-top: 0.2rem; margin-bottom: 1rem; color: var(--color-text-main); }
+        .card-description { font-size: 0.95rem; line-height: 1.6; color: var(--color-text-muted); margin-bottom: 1.5rem; }
+        
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600; }
+        .stat-row.success { color: var(--color-success); }
+        
+        .stock-buy-input { background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 12px; margin-bottom: 1rem; }
+        .stock-buy-input input { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; width: 60px; margin-left: 0.5rem; padding: 0.2rem; border-radius: 4px; }
+        .total-cost { margin-top: 0.5rem; font-weight: 800; color: var(--color-primary); font-size: 1.1rem; }
+
+        .card-actions { display: flex; gap: 1rem; margin-top: 1rem; }
+        .flex-1 { flex: 1; }
+
+        .asset-sell-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .eligible-assets { margin-top: 1rem; }
+        
+        .peer-trade-section { margin-top: 1.5rem; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem; }
+        .btn-link { background: none; border: none; color: var(--color-secondary); text-decoration: underline; cursor: pointer; font-size: 0.85rem; }
+        .trade-controls { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+        .trade-controls select, .trade-controls input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0.5rem; border-radius: 8px; }
+      `}</style>
     </div>
   );
 };

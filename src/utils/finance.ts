@@ -23,28 +23,48 @@ export const recalculateStatement = (
   }, 0);
 
   const totalIncome = statement.salary + passiveIncome;
+  
+  // 2. Calculate Expenses from Liabilities
+  const bankLoanPayment = statement.liabilities
+    .filter(l => l.name === 'Bank Loan')
+    .reduce((sum, l) => sum + l.payment, 0);
+  
+  // Dynamic liability payments based on what's left in the statement.liabilities
+  const mortgagePayment = statement.liabilities.find(l => l.id === 'mortgage')?.payment || 0;
+  const schoolLoanPayment = statement.liabilities.find(l => l.id === 'school')?.payment || 0;
+  const carLoanPayment = statement.liabilities.find(l => l.id === 'car')?.payment || 0;
+  const creditCardPayment = statement.liabilities.find(l => l.id === 'credit')?.payment || 0;
+  const retailPayment = statement.liabilities.find(l => l.id === 'retail')?.payment || 0;
 
-  // 2. Calculate Expenses from Liabilities + Fixed Expenses
-  const liabilitiesPayment = statement.liabilities.reduce((sum, liability) => sum + liability.payment, 0);
   const childExpenses = statement.children * profession.perChildExpense;
   
-  // Total Expenses = Taxes + Other Expenses + Child Expenses + Liability Payments
+  // Total Expenses = Taxes + Other + Child + All Liability Payments
+  // Note: taxes and otherExpenses are now taken from the statement itself to allow for Macro Events
   const totalExpenses = 
-    profession.taxes + 
-    profession.otherExpenses + 
+    statement.taxes + 
+    statement.otherExpenses + 
     childExpenses + 
-    liabilitiesPayment;
+    mortgagePayment +
+    schoolLoanPayment +
+    carLoanPayment +
+    creditCardPayment +
+    retailPayment +
+    bankLoanPayment;
 
   // 3. Calculate Cash Flow
   const monthlyCashFlow = totalIncome - totalExpenses;
-
-  // If passive income strictly exceeds total expenses, they are ready for the Fast Track
 
   return {
     ...statement,
     passiveIncome,
     totalIncome,
     childExpenses,
+    bankLoanPayment,
+    homeMortgagePayment: mortgagePayment,
+    schoolLoanPayment,
+    carLoanPayment,
+    creditCardPayment,
+    retailPayment,
     totalExpenses,
     monthlyCashFlow,
   };

@@ -1,6 +1,7 @@
 import { Ledger } from './components/Ledger';
 import { Board } from './components/Board';
 import { Lobby } from './components/Lobby';
+import { GameWinModal } from './components/GameWinModal';
 import { useGameStore } from './store/gameStore';
 import './index.css';
 
@@ -15,6 +16,7 @@ function App() {
     <div className="app-container">
       <Board />
       <Ledger />
+      <GameWinModal />
     </div>
   );
 }
