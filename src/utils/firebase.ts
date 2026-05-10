@@ -13,5 +13,21 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getDatabase(app);
+const isConfigValid = !!firebaseConfig.apiKey && !!firebaseConfig.databaseURL;
+
+let app;
+let db: any;
+
+try {
+  if (isConfigValid) {
+    app = initializeApp(firebaseConfig);
+    db = getDatabase(app);
+  } else {
+    console.error("Firebase config is missing! Please check your .env file or GitHub Secrets.");
+  }
+} catch (error) {
+  console.error("Firebase initialization failed:", error);
+}
+
+export { db };
+export const hasValidConfig = isConfigValid;

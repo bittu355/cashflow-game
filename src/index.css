@@ -15,6 +15,8 @@
   --font-main: 'Outfit', sans-serif;
   --font-heading: 'Playpen Sans', cursive;
   --font-accent: 'Architects Daughter', cursive;
+  --board-thickness: 12px;
+  --depth-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
 
 * {
@@ -63,6 +65,7 @@ body {
   justify-content: center;
   background: radial-gradient(circle at center, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
   overflow: hidden;
+  perspective: 1200px;
 }
 
 /* Center Hub Styling */
@@ -79,10 +82,11 @@ body {
   border: 2px solid var(--color-primary) !important;
   box-shadow: 
     0 0 50px rgba(0, 0, 0, 0.8),
+    0 20px 40px rgba(0, 0, 0, 0.5),
     0 0 20px rgba(212, 175, 55, 0.2),
     inset 0 0 30px rgba(0,0,0,0.5) !important;
   z-index: 10;
-  transform: translateZ(50px);
+  transform: translateZ(40px);
 }
 
 .hub-content {
@@ -348,4 +352,58 @@ body {
   letter-spacing: 2px;
   opacity: 0.6;
   text-transform: uppercase;
+}
+
+/* 3D Board Additions */
+.board-track-base {
+  position: relative;
+  width: 520px;
+  height: 520px;
+  background: rgba(10, 10, 15, 0.8);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 0 0 1px rgba(212, 175, 55, 0.1),
+    0 15px 35px rgba(0,0,0,0.5),
+    0 var(--board-thickness) 0 rgba(10, 10, 15, 1);
+  transform-style: preserve-3d;
+}
+
+.board-space-node {
+  transform-style: preserve-3d;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+}
+
+.board-space-node:hover {
+  transform: scale(1.1) translateZ(15px) !important;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.6), inset 0 2px 0 rgba(255,255,255,0.4);
+  z-index: 100;
+}
+
+.player-token-pulse {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  transform: translateZ(5px);
+  animation: tokenPulse 2s infinite ease-in-out;
+}
+
+@keyframes tokenPulse {
+  0%, 100% { transform: translateZ(5px) scale(1); box-shadow: 0 0 5px currentColor; }
+  50% { transform: translateZ(10px) scale(1.2); box-shadow: 0 0 15px currentColor; }
+}
+
+.space-icon {
+  font-size: 1.2rem;
+  transform: translateZ(5px);
+}
+
+.space-label-text {
+  font-size: 0.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-top: -2px;
+  opacity: 0.8;
+  transform: translateZ(2px);
 }

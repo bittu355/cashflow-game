@@ -1,9 +1,17 @@
+import { useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { DREAMS } from '../data/fastTrack';
+import { triggerWinConfetti } from '../utils/celebration';
 
 export const GameWinModal = () => {
   const { winner, players, resetGame } = useGameStore();
   
+  useEffect(() => {
+    if (winner) {
+      triggerWinConfetti();
+    }
+  }, [winner]);
+
   if (!winner) return null;
 
   const winningPlayer = players.find(p => p.id === winner);

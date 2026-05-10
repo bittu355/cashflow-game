@@ -5,6 +5,7 @@ import { CardModal } from './CardModal';
 import { FastTrackBoard } from './FastTrackBoard';
 import { Dice3D } from './Dice3D';
 import { gameAudio } from '../utils/audio';
+import { triggerFastTrackConfetti } from '../utils/celebration';
 
 export const Board = () => {
   const { 
@@ -41,6 +42,18 @@ export const Board = () => {
   const currentPlayer = players[currentPlayerIndex];
   if (!currentPlayer) return null;
   const isMyTurn = myPlayerId === 'LOCAL' || currentPlayer?.id === myPlayerId;
+
+  // Celebration trigger for Fast Track entry
+  useEffect(() => {
+    if (currentPlayer?.phase === 'FAST_TRACK' && turnPhase === 'ACTION') {
+      // We only want to trigger this once per player entry
+      const hasCelebrated = sessionStorage.getItem(`celebrated_${currentPlayer.id}`);
+      if (!hasCelebrated) {
+        triggerFastTrackConfetti();
+        sessionStorage.setItem(`celebrated_${currentPlayer.id}`, 'true');
+      }
+    }
+  }, [currentPlayer?.id, currentPlayer?.phase, turnPhase]);
 
   useEffect(() => {
     if (currentPlayer?.isBot && turnPhase === 'ROLL') {
@@ -99,7 +112,7 @@ export const Board = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transform: `scale(${scale}) rotateX(15deg)`,
+        transform: `scale(${scale}) rotateX(25deg)`,
         transformStyle: 'preserve-3d',
         transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
@@ -110,8 +123,7 @@ export const Board = () => {
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center'
+          transformStyle: 'preserve-3d'
         }}>
         
           <div className="outer-ring-decoration" />
@@ -131,13 +143,10 @@ export const Board = () => {
                     height: '46px',
                     backgroundColor: space.color,
                     borderRadius: '12px',
-                    transform: `rotate(${angle}deg) translate(0, -${radius}px) rotate(-${angle}deg)`,
+                    transform: `rotate(${angle}deg) translate(0, -${radius}px) rotate(-${angle}deg) translateZ(10px)`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: `0 8px 20px rgba(0,0,0,0.6), inset 0 2px 0 rgba(255,255,255,0.2)`,
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    transition: 'all 0.3s ease',
                   }}
                   title={space.label}
                 >
