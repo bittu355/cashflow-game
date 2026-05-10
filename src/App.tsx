@@ -1,9 +1,10 @@
 import { Ledger } from './components/Ledger';
 import { Board } from './components/Board';
 import { Lobby } from './components/Lobby';
+import { TopNav } from './components/TopNav';
 import { GameWinModal } from './components/GameWinModal';
 import { useGameStore } from './store/gameStore';
-import './utils/multiplayer'; // Activate multiplayer listeners
+import './utils/multiplayer'; 
 import './index.css';
 
 function App() {
@@ -15,8 +16,11 @@ function App() {
 
   return (
     <div className="app-container">
-      <Board />
-      <Ledger />
+      <TopNav />
+      <div className="main-game-layout">
+        <Board />
+        <Ledger />
+      </div>
       <GameWinModal />
     </div>
   );

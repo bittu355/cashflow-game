@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-<<<<<<< HEAD
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { GameState, Player, Profession, Asset } from '../types/game';
 import { recalculateStatement } from '../utils/finance';
@@ -94,7 +93,6 @@ export const useGameStore = create<GameState>()(
       },
 
       rollDice: (numDice: number) => {
-        // Validation: Charity allows up to 2 dice, Fast Track allows up to 3, normal is 1
         const rolls = Array.from({ length: numDice }, () => Math.floor(Math.random() * 6) + 1);
         const totalRoll = rolls.reduce((sum, val) => sum + val, 0);
         gameAudio.playSFX('dice');
@@ -146,7 +144,6 @@ export const useGameStore = create<GameState>()(
         const currentPlayer = state.players[state.currentPlayerIndex];
         if (!currentPlayer || state.pendingPaydays === 0) return;
 
-        // Use the consolidated payday logic
         for (let i = 0; i < state.pendingPaydays; i++) {
           state.payday(currentPlayer.id);
         }
@@ -157,7 +154,6 @@ export const useGameStore = create<GameState>()(
       drawCard: (type) => {
         let card = null;
         if (type === 'SMALL_DEAL') {
-          // For now, randomly pick a small deal
           card = SMALL_DEALS[Math.floor(Math.random() * SMALL_DEALS.length)];
         } else if (type === 'BIG_DEAL') {
           card = BIG_DEALS[Math.floor(Math.random() * BIG_DEALS.length)];
@@ -166,7 +162,6 @@ export const useGameStore = create<GameState>()(
         } else if (type === 'MARKET') {
           card = MARKET[Math.floor(Math.random() * MARKET.length)];
         } else {
-          // Fallback placeholder
           card = { type, title: 'Market Event', description: 'Placeholder market event.', actionText: 'OK' };
         }
         set({ activeCard: card });
@@ -181,7 +176,6 @@ export const useGameStore = create<GameState>()(
           let nextPlayerIndex = (state.currentPlayerIndex + 1) % Math.max(state.players.length, 1);
           let players = [...state.players];
 
-          // Skip players with lostTurns or who are bankrupt (bankrupt is a subcase of lostTurns usually)
           let attempts = 0;
           while (players[nextPlayerIndex]?.lostTurns > 0 && attempts < players.length) {
             players[nextPlayerIndex] = {
@@ -189,12 +183,10 @@ export const useGameStore = create<GameState>()(
               lostTurns: players[nextPlayerIndex].lostTurns - 1
             };
             
-            // If they are no longer lost, but still marked bankrupt, clear bankruptcy
             if (players[nextPlayerIndex].lostTurns <= 0) {
               players[nextPlayerIndex].isBankrupt = false;
             }
             
-            // Still skip them for this turn as we just decremented it
             nextPlayerIndex = (nextPlayerIndex + 1) % Math.max(state.players.length, 1);
             attempts++;
           }
@@ -209,20 +201,16 @@ export const useGameStore = create<GameState>()(
           };
         });
 
-        // Handle Macro Event turn countdown
         const activeEvent = get().activeMacroEvent;
         if (activeEvent) {
           const newTurns = activeEvent.turnsRemaining - 1;
           if (newTurns <= 0) {
-            // Revert effects if needed (e.g., Inflation is permanent, but maybe Recession isn't?)
-            // For simplicity, we'll just clear the indicator.
             set({ activeMacroEvent: null });
           } else {
             set({ activeMacroEvent: { ...activeEvent, turnsRemaining: newTurns } });
           }
         }
 
-        // 3-Step Integrity Audit
         const finalPlayers = get().players.map(p => ({
           ...p,
           statement: recalculateStatement(p.statement, p.profession)
@@ -230,7 +218,6 @@ export const useGameStore = create<GameState>()(
         
         set({ players: finalPlayers });
 
-        // Trigger Macro Economic event every 10 turns
         const currentCount = get().turnCount;
         if (currentCount > 0 && currentCount % 10 === 0) {
           const events: ('BOOM' | 'RECESSION' | 'INFLATION')[] = ['BOOM', 'RECESSION', 'INFLATION'];
@@ -241,7 +228,7 @@ export const useGameStore = create<GameState>()(
       },
 
       takeLoan: (playerId: string, amount: number) => {
-        if (amount <= 0 || amount % 1000 !== 0) return; // Must be positive multiples of 1000
+        if (amount <= 0 || amount % 1000 !== 0) return;
         
         set((state) => {
           const players = state.players.map(p => {
@@ -279,7 +266,7 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      payDebt: (playerId: string, liabilityId: string, amount?: number) => {
+      payLoan: (playerId: string, liabilityId: string, amount?: number) => {
         set((state) => {
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
@@ -287,19 +274,16 @@ export const useGameStore = create<GameState>()(
             const targetLiability = p.statement.liabilities.find(l => l.id === liabilityId);
             if (!targetLiability) return p;
             
-            // If paying bank loan, amount might be partial. Otherwise it's the full amount.
             const payoffAmount = amount || targetLiability.amount;
             
-            if (p.statement.cash < payoffAmount) return p; // Not enough cash
-            if (liabilityId === 'bank_loan' && payoffAmount % 1000 !== 0) return p; // Bank loans must be $1000 increments
+            if (p.statement.cash < payoffAmount) return p;
+            if (liabilityId === 'bank_loan' && payoffAmount % 1000 !== 0) return p;
             
             let newLiabilities;
             if (payoffAmount === targetLiability.amount) {
-              // Full payoff
               newLiabilities = p.statement.liabilities.filter(l => l.id !== liabilityId);
             } else {
-              // Partial payoff (Bank Loan)
-              const paymentReduction = payoffAmount * 0.10; // 10% interest rule for bank loans
+              const paymentReduction = payoffAmount * 0.10;
               newLiabilities = p.statement.liabilities.map(l => 
                 l.id === liabilityId 
                   ? { ...l, amount: l.amount - payoffAmount, payment: l.payment - paymentReduction }
@@ -327,7 +311,7 @@ export const useGameStore = create<GameState>()(
         set((state) => {
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
-            if (!force && p.statement.cash < asset.downPayment) return p; // Not enough cash
+            if (!force && p.statement.cash < asset.downPayment) return p;
 
             const draftStatement = {
               ...p.statement,
@@ -354,8 +338,6 @@ export const useGameStore = create<GameState>()(
             const targetAsset = p.statement.assets.find(a => a.id === assetId);
             if (!targetAsset) return p;
 
-            // When selling an asset, you receive the sale price MINUS the underlying mortgage.
-            // Mortgage = Cost - DownPayment
             const mortgage = targetAsset.cost - targetAsset.downPayment;
             const netCashReceived = salePrice - mortgage;
 
@@ -377,7 +359,6 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-
       payCash: (playerId: string, amount: number) => {
         set((state) => {
           const players = state.players.map(p => {
@@ -398,7 +379,7 @@ export const useGameStore = create<GameState>()(
         set((state) => {
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
-            if (p.statement.children >= 3) return p; // Max 3 children
+            if (p.statement.children >= 3) return p;
 
             const draftStatement = {
               ...p.statement,
@@ -444,19 +425,16 @@ export const useGameStore = create<GameState>()(
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
             
-            // Fast track target = Day Job Passive Income + $50,000
             const startingPassive = p.statement.passiveIncome;
-            const ftIncome = startingPassive * 100;
+            const ftIncome = startingPassive;
             const target = ftIncome + 50000;
-            
-            // Give them 1x their new FT income in cash to start (classic rule variation)
-            const fastTrackStartingCash = ftIncome;
+            const fastTrackStartingCash = ftIncome * 100;
             
             return {
               ...p,
               phase: 'FAST_TRACK' as const,
               position: 0,
-              fastTrackCashflow: 0, // Incremental cashflow starts at 0
+              fastTrackCashflow: 0,
               fastTrackTarget: target,
               statement: {
                 ...p.statement,
@@ -469,8 +447,6 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-
-
       handleMarketEvent: (event: { type: 'STOCK_SPLIT' | 'REVERSE_SPLIT', symbol: string }) => {
         set((state) => {
           const players = state.players.map(p => {
@@ -479,15 +455,14 @@ export const useGameStore = create<GameState>()(
                 const multiplier = event.type === 'STOCK_SPLIT' ? 2 : 0.5;
                 const newShares = Math.floor((asset.shares || 0) * multiplier);
                 const newCost = asset.cost / multiplier; 
-                // total holding cashflow remains the same, but per-share dividend halves
                 const newDividend = (asset.dividend || 0) / multiplier;
                 
                 return { 
-                  ...asset, 
-                  shares: newShares, 
-                  cost: newCost,
-                  downPayment: newCost, // For stocks, downPayment = cost
-                  dividend: newDividend
+                   ...asset, 
+                   shares: newShares, 
+                   cost: newCost,
+                   downPayment: newCost,
+                   dividend: newDividend
                 };
               }
               return asset;
@@ -512,7 +487,6 @@ export const useGameStore = create<GameState>()(
           const downPayment = card.downPayment || card.cost || 0;
           
           if (isPartnership) {
-            // Partnership: Both split the down payment and the cashflow
             const halfDown = downPayment / 2;
             const halfCashflow = (card.cashflow || 0) / 2;
 
@@ -550,7 +524,6 @@ export const useGameStore = create<GameState>()(
 
             return { players, activeCard: null };
           } else {
-            // Standard Sale
             const totalCostForBuyer = fee + downPayment;
             if (buyer.statement.cash < totalCostForBuyer) return state;
 
@@ -654,10 +627,6 @@ export const useGameStore = create<GameState>()(
         get().takeLoan(playerId, amount);
       },
 
-      payLoan: (playerId: string, liabilityId: string) => {
-        get().payDebt(playerId, liabilityId);
-      },
-
       declareBankruptcy: (playerId: string) => {
         set((state) => {
           const players = state.players.map(p => {
@@ -699,7 +668,8 @@ export const useGameStore = create<GameState>()(
             if (p.statement.cash < cost) return p;
 
             const newCashflow = p.fastTrackCashflow + cashflow;
-            const won = newCashflow >= (p.fastTrackTarget || 0);
+            const currentTotalFTIncome = (p.statement.fastTrackStartingIncome || 0) + newCashflow;
+            const won = currentTotalFTIncome >= (p.fastTrackTarget || 0);
 
             get().addHistory({
               playerId,
@@ -728,10 +698,6 @@ export const useGameStore = create<GameState>()(
         set((state) => {
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
-            // Winning by landing on your dream and buying it is handled in component/store
-            // For now, any dream purchase on Fast Track is a win condition if it's the player's target
-            // But usually you just win immediately if you land on YOUR specific dream.
-            // We'll simplify: Land on Dream + Buy = WIN.
             
             get().addHistory({
               playerId,
@@ -784,8 +750,6 @@ export const useGameStore = create<GameState>()(
           return { players };
         });
       },
-
-
 
       handleMacroEconomicEvent: (event) => {
         set((state) => {
@@ -848,16 +812,12 @@ export const useGameStore = create<GameState>()(
           return;
         }
 
-        console.log(`AI ${currentPlayer.name} is thinking...`);
-
-        // 1. Roll Dice
         setTimeout(() => {
           get().setRolling(true);
           let numDice = 1;
           if (currentPlayer.phase === 'RAT_RACE') {
             numDice = currentPlayer.charityTurnsRemaining > 0 ? 2 : 1;
           } else {
-            // Fast Track
             numDice = currentPlayer.charityTurnsRemaining > 0 ? 3 : 2;
           }
           
@@ -866,22 +826,16 @@ export const useGameStore = create<GameState>()(
             get().setRolling(false);
           }, 1000);
 
-          // 2. Action Phase
           setTimeout(() => {
             const state = get();
-            
-            // Collect Payday if pending
             if (state.pendingPaydays > 0) {
               get().collectPayday();
             }
 
-            // Fast Track Phase Logic
             if (currentPlayer.phase === 'FAST_TRACK') {
               const currentSpace = FAST_TRACK_SPACES[currentPlayer.position];
-              
               if (currentSpace.type === 'BUSINESS' && currentSpace.business) {
                 if (currentPlayer.statement.cash >= currentSpace.business.cost) {
-                  // AI Rolls for success if required
                   let roll = 0;
                   if (currentSpace.business.requiredRoll) {
                     roll = Math.floor(Math.random() * 6) + 1;
@@ -899,7 +853,7 @@ export const useGameStore = create<GameState>()(
                   get().setAIAction({ name: 'Passing', description: `AI couldn't afford ${currentSpace.business.name}` });
                 }
               } else if (currentSpace.type === 'DREAM') {
-                if (currentPlayer.statement.cash >= 100000) { // Assume AI buys any dream they land on if they have cash
+                if (currentPlayer.statement.cash >= 100000) {
                   get().setAIAction({ name: 'Winner!', description: `AI achieved a dream and wins!` });
                   get().buyDream(currentPlayer.id);
                 }
@@ -908,7 +862,6 @@ export const useGameStore = create<GameState>()(
                 get().resolveFastTrackPenalty(currentPlayer.id, currentSpace.type as any);
               }
             } else if (state.activeCard) {
-              // Rat Race Phase Logic
               const card = state.activeCard;
               let actionTaken = false;
 
@@ -941,7 +894,6 @@ export const useGameStore = create<GameState>()(
                 get().resolveCard();
               }
             } else {
-              // Non-card spaces (Baby, Charity, Downsized)
               const space = RAT_RACE_SPACES[currentPlayer.position];
               if (space.type === 'BABY') {
                 get().haveChild(currentPlayer.id);
@@ -957,7 +909,6 @@ export const useGameStore = create<GameState>()(
               }
             }
 
-            // 3. End Turn
             setTimeout(() => {
               get().setAIAction(null);
               get().endTurn();
@@ -967,143 +918,8 @@ export const useGameStore = create<GameState>()(
       }
     }),
     {
-      name: 'cashflow-game-storage', // Auto-save persistence key
+      name: 'cashflow-game-storage',
       storage: createJSONStorage(() => localStorage),
     }
   )
 );
-=======
-import type { GameState, Player, FinancialStatement } from '../types/game';
-import { recalculateStatement } from '../utils/finance';
-
-interface GameActions {
-  addPlayer: (name: string, color: string) => void;
-  rollDice: (count?: number) => void;
-  movePlayer: (spaces: number) => void;
-  nextTurn: () => void;
-  takeLoan: (amount: number) => void;
-  payLoan: (id: string) => void;
-  buyAsset: (asset: any) => void;
-  sellAsset: (assetId: string) => void;
-  addHistory: (msg: string) => void;
-}
-
-export const useGameStore = create<GameState & GameActions>((set) => ({
-  players: [],
-  currentPlayerIndex: 0,
-  turnPhase: 'ROLL',
-  diceRoll: [1],
-  activeCard: null,
-  pendingPaydays: 0,
-  winner: null,
-  history: [],
-  turnCount: 0,
-  activeMacroEvent: null,
-
-  addPlayer: (name, color) => set((state) => ({
-    players: [...state.players, {
-      id: Math.random().toString(36).substring(7),
-      name,
-      color,
-      position: 0,
-      isFastTrack: false,
-      profession: null,
-      statement: {
-        salary: 0,
-        passiveIncome: 0,
-        totalIncome: 0,
-        taxes: 0,
-        homeMortgagePayment: 0,
-        schoolLoanPayment: 0,
-        carLoanPayment: 0,
-        creditCardPayment: 0,
-        retailPayment: 0,
-        otherExpenses: 0,
-        bankLoanPayment: 0,
-        childExpenses: 0,
-        totalExpenses: 0,
-        monthlyCashFlow: 0,
-        savings: 0,
-        assets: [],
-        liabilities: [],
-        children: 0,
-      }
-    }]
-  })),
-
-  rollDice: (count = 1) => set(() => {
-    const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
-    return { diceRoll: rolls, turnPhase: 'ACTION' };
-  }),
-
-  movePlayer: (spaces) => set((state) => {
-    const players = [...state.players];
-    const player = players[state.currentPlayerIndex];
-    player.position = (player.position + spaces) % 24;
-    return { players };
-  }),
-
-  nextTurn: () => set((state) => ({
-    currentPlayerIndex: (state.currentPlayerIndex + 1) % state.players.length,
-    turnPhase: 'ROLL',
-    activeCard: null,
-    turnCount: state.turnCount + 1
-  })),
-
-  takeLoan: (amount) => set((state) => {
-    const players = [...state.players];
-    const player = players[state.currentPlayerIndex];
-    player.statement.savings += amount;
-    player.statement.liabilities.push({
-      id: `loan-${Date.now()}`,
-      name: 'Bank Loan',
-      amount,
-      payment: Math.floor(amount * 0.1)
-    });
-    player.statement = recalculateStatement(player.statement, player.profession);
-    return { players };
-  }),
-
-  payLoan: (id) => set((state) => {
-    const players = [...state.players];
-    const player = players[state.currentPlayerIndex];
-    const liability = player.statement.liabilities.find(l => l.id === id);
-    if (liability && player.statement.savings >= liability.amount) {
-      player.statement.savings -= liability.amount;
-      player.statement.liabilities = player.statement.liabilities.filter(l => l.id !== id);
-      player.statement = recalculateStatement(player.statement, player.profession);
-    }
-    return { players };
-  }),
-
-  buyAsset: (asset) => set((state) => {
-    const players = [...state.players];
-    const player = players[state.currentPlayerIndex];
-    if (player.statement.savings >= (asset.downPayment || asset.cost)) {
-      player.statement.savings -= (asset.downPayment || asset.cost);
-      player.statement.assets.push(asset);
-      if (asset.liability) {
-        player.statement.liabilities.push(asset.liability);
-      }
-      player.statement = recalculateStatement(player.statement, player.profession);
-    }
-    return { players };
-  }),
-
-  sellAsset: (assetId) => set((state) => {
-    const players = [...state.players];
-    const player = players[state.currentPlayerIndex];
-    const asset = player.statement.assets.find(a => a.id === assetId);
-    if (asset) {
-      player.statement.savings += (asset.salePrice || asset.cost);
-      player.statement.assets = player.statement.assets.filter(a => a.id !== assetId);
-      player.statement = recalculateStatement(player.statement, player.profession);
-    }
-    return { players };
-  }),
-
-  addHistory: (msg) => set((state) => ({
-    history: [msg, ...state.history].slice(0, 50)
-  }))
-}));
->>>>>>> 6b18c4090941a97b1a58427d5a8a172d4e257aa5
