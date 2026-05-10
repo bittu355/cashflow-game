@@ -1,73 +1,65 @@
-# React + TypeScript + Vite
+# 💰 Cashflow: The Multiplayer Financial Engine
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![Deploy Status](https://github.com/bittu355/cashflow-game/actions/workflows/firebase-hosting-merge.yml/badge.svg)
 
-Currently, two official plugins are available:
+A high-performance, real-time digital version of the classic financial literacy board game. Built with a focus on premium aesthetics, robust multiplayer synchronization, and a deep financial logic engine.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+![Cashflow Game Banner](https://images.unsplash.com/photo-1554224155-1697469875bb?auto=format&fit=crop&q=80&w=1200&h=400)
 
-## React Compiler
+## 🚀 Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🏢 Dual-Phase Gameplay
+- **The Rat Race**: Navigate the inner circle, managing salary, expenses, and small/big deals to build passive income.
+- **The Fast Track**: Once your passive income exceeds your expenses, escape to the outer track and chase your ultimate dream.
 
-## Expanding the ESLint configuration
+### 🌐 Real-Time Multiplayer
+- **Firebase Powered**: Seamless synchronization across multiple clients using Firebase Realtime Database.
+- **Matchmaking Lobby**: Create private rooms or join friends using unique room codes.
+- **Cross-Platform**: Optimized for web and mobile browsers, with native support via Capacitor.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 🤖 Advanced Game Engine
+- **AI Opponents**: Intelligent bots that make financial decisions based on risk/reward ratios.
+- **3D Physics Dice**: Premium CSS-based 3D dice with realistic tumbling animations and audio feedback.
+- **Macro Events**: Global market shifts (Inflation, Tech Booms) that affect all players simultaneously.
+- **Insert-Only Ledger**: A robust financial audit log tracking every dollar and cashflow change for total consistency.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🛠 Tech Stack
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **Core**: React 19 (Latest), TypeScript, Vite
+- **State Management**: Zustand (with selective persistence)
+- **Real-time Backend**: Firebase Realtime Database
+- **Mobile Bridge**: Capacitor (Android/iOS support)
+- **Styling**: Premium Glassmorphism & Vanilla CSS
+- **PWA**: Fully installable as a Progressive Web App
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 📦 Installation & Setup
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/bittu355/cashflow-game.git
+   cd cashflow-game
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+3. **Configure Firebase**:
+   Update `src/utils/firebase.ts` with your Firebase credentials.
+
+4. **Run development server**:
+   ```bash
+   npm run dev
+   ```
+
+## 🎮 How to Play
+
+1. **Join the Lobby**: Select your profession (Doctor, Teacher, Janitor, etc.) and your life's dream.
+2. **The Goal**: Accumulate assets (Real Estate, Stocks, Businesses) until your **Passive Income > Total Expenses**.
+3. **Manage Debt**: Use the Bank modal to take loans or pay off high-interest liabilities.
+4. **Market Events**: Watch the Audit Log for market opportunities to sell your assets for massive capital gains.
+
+---
+
+Built with ❤️ by [bittu355](https://github.com/bittu355)

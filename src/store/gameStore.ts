@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { GameState, Player, Profession, Asset, Liability } from '../types/game';
+import type { GameState, Player, Profession, Asset } from '../types/game';
 import { recalculateStatement } from '../utils/finance';
 import { SMALL_DEALS, BIG_DEALS, DOODADS, MARKET } from '../data/cards';
 import { FAST_TRACK_SPACES } from '../data/fastTrack';
@@ -141,28 +141,16 @@ export const useGameStore = create<GameState>()(
       },
 
       collectPayday: () => {
-        set((state) => {
-          if (state.pendingPaydays === 0) return state;
-          
-          const currentPlayer = state.players[state.currentPlayerIndex];
-          const payAmount = currentPlayer.phase === 'FAST_TRACK'
-            ? ((currentPlayer.statement.fastTrackStartingIncome || 0) + currentPlayer.fastTrackCashflow) * state.pendingPaydays
-            : currentPlayer.statement.monthlyCashFlow * state.pendingPaydays;
-          
-          const players = state.players.map((p, idx) => {
-            if (idx !== state.currentPlayerIndex) return p;
-            return {
-              ...p,
-              statement: {
-                ...p.statement,
-                cash: p.statement.cash + payAmount
-              }
-            };
-          });
-          
-          gameAudio.playSFX('cash');
-          return { players, pendingPaydays: 0 };
-        });
+        const state = get();
+        const currentPlayer = state.players[state.currentPlayerIndex];
+        if (!currentPlayer || state.pendingPaydays === 0) return;
+
+        // Use the consolidated payday logic
+        for (let i = 0; i < state.pendingPaydays; i++) {
+          state.payday(currentPlayer.id);
+        }
+        
+        set({ pendingPaydays: 0 });
       },
 
       drawCard: (type) => {
@@ -252,7 +240,7 @@ export const useGameStore = create<GameState>()(
       },
 
       takeLoan: (playerId: string, amount: number) => {
-        if (amount % 1000 !== 0) return; // Must be multiples of 1000
+        if (amount <= 0 || amount % 1000 !== 0) return; // Must be positive multiples of 1000
         
         set((state) => {
           const players = state.players.map(p => {
@@ -276,6 +264,15 @@ export const useGameStore = create<GameState>()(
               statement: recalculateStatement(draftStatement, p.profession)
             };
           });
+
+          get().addHistory({
+            playerId,
+            type: 'LOAN',
+            description: `Borrowed $${amount.toLocaleString()} from bank`,
+            amount: amount,
+            cashflowChange: -(amount * 0.1)
+          });
+
           gameAudio.playSFX('cash');
           return { players };
         });
@@ -418,16 +415,24 @@ export const useGameStore = create<GameState>()(
 
       payday: (playerId: string) => {
         set((state) => {
-          const players = state.players.map(p => {
-            if (p.id !== playerId) return p;
+          const p = state.players.find(pl => pl.id === playerId);
+          if (!p) return state;
+
+          const payAmount = p.phase === 'FAST_TRACK'
+            ? ((p.statement.fastTrackStartingIncome || 0) + p.fastTrackCashflow)
+            : p.statement.monthlyCashFlow;
+
+          const players = state.players.map(pl => {
+            if (pl.id !== playerId) return pl;
             return {
-              ...p,
+              ...pl,
               statement: {
-                ...p.statement,
-                cash: p.statement.cash + p.statement.monthlyCashFlow
+                ...pl.statement,
+                cash: pl.statement.cash + payAmount
               }
             };
           });
+
           gameAudio.playSFX('cash');
           return { players };
         });
@@ -645,39 +650,8 @@ export const useGameStore = create<GameState>()(
       },
 
       borrowMoney: (playerId: string, amount: number) => {
-        set((state) => {
-          const players = state.players.map(p => {
-            if (p.id !== playerId) return p;
-            
-            const newLiability: Liability = {
-              id: `loan-${Date.now()}-${Math.random()}`,
-              name: 'Bank Loan',
-              amount: amount,
-              payment: amount * 0.1
-            };
-
-            const draftStatement = {
-              ...p.statement,
-              cash: p.statement.cash + amount,
-              liabilities: [...p.statement.liabilities, newLiability]
-            };
-
-            return { ...p, statement: recalculateStatement(draftStatement, p.profession) };
-          });
-
-          get().addHistory({
-            playerId,
-            type: 'LOAN',
-            description: `Borrowed $${amount.toLocaleString()} from bank`,
-            amount: amount,
-            cashflowChange: -(amount * 0.1)
-          });
-
-          return { players };
-        });
+        get().takeLoan(playerId, amount);
       },
-
-
 
       payLoan: (playerId: string, liabilityId: string) => {
         get().payDebt(playerId, liabilityId);
@@ -856,8 +830,11 @@ export const useGameStore = create<GameState>()(
           activeCard: null,
           pendingPaydays: 0,
           winner: null,
-          history: []
+          history: [],
+          turnCount: 0,
+          activeMacroEvent: null
         });
+        gameAudio.playSFX('news');
       },
 
       runAITurn: () => {
