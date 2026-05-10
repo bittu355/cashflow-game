@@ -1,5 +1,7 @@
 # 💰 Cashflow: The Multiplayer Financial Engine
 
+![Deploy Status](https://github.com/bittu355/cashflow-game/actions/workflows/firebase-hosting-merge.yml/badge.svg)
+
 A high-performance, real-time digital version of the classic financial literacy board game. Built with a focus on premium aesthetics, robust multiplayer synchronization, and a deep financial logic engine.
 
 ![Cashflow Game Banner](https://images.unsplash.com/photo-1554224155-1697469875bb?auto=format&fit=crop&q=80&w=1200&h=400)
@@ -8,12 +10,12 @@ A high-performance, real-time digital version of the classic financial literacy 
 
 ### 🏢 Dual-Phase Gameplay
 - **The Rat Race**: Navigate the inner circle, managing salary, expenses, and small/big deals to build passive income.
-- **The Fast Track**: Once your passive income exceeds your expenses, escape to the outer track and chase your ultimate dream.
+- **The Fast Track**: Once passive income exceeds expenses, break out into the outer circle of high-stakes investments and massive cashflow.
 
-### 🌐 Real-Time Multiplayer
-- **Firebase Powered**: Seamless synchronization across multiple clients using Firebase Realtime Database.
-- **Matchmaking Lobby**: Create private rooms or join friends using unique room codes.
-- **Cross-Platform**: Optimized for web and mobile browsers, with native support via Capacitor.
+### 👥 Real-time Multiplayer
+- **Firebase Powered**: State-of-the-art synchronization ensures all players see moves and market events instantly.
+- **Dynamic Lobbies**: Create or join rooms with unique game IDs for private sessions.
+- **Financial Ledger**: A live dual-view ledger for personal financial statements and global audit logs.
 
 ### 🤖 Advanced Game Engine
 - **AI Opponents**: Intelligent bots that make financial decisions based on risk/reward ratios.
