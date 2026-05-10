@@ -5,7 +5,7 @@
 
 A high-performance, real-time digital version of the classic financial literacy board game. Built with a focus on premium aesthetics, robust multiplayer synchronization, and a deep financial logic engine.
 
-![Cashflow Game Banner](file:///C:/Users/Bittu/.gemini/antigravity/brain/ebad01dc-4833-495d-815a-4c6be44216c7/cashflow_game_banner_1778406134126.png)
+![Cashflow Game Banner](public/banner.png)
 
 ## 🚀 Experience the Game
 **Click below to start playing instantly:**
