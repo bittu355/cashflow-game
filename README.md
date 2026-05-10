@@ -10,12 +10,21 @@ A high-performance, real-time digital version of the classic financial literacy 
 
 ### 🏢 Dual-Phase Gameplay
 - **The Rat Race**: Navigate the inner circle, managing salary, expenses, and small/big deals to build passive income.
+<<<<<<< HEAD
 - **The Fast Track**: Once your passive income exceeds your expenses, escape to the outer track and chase your ultimate dream.
 
 ### 🌐 Real-Time Multiplayer
 - **Firebase Powered**: Seamless synchronization across multiple clients using Firebase Realtime Database.
 - **Matchmaking Lobby**: Create private rooms or join friends using unique room codes.
 - **Cross-Platform**: Optimized for web and mobile browsers, with native support via Capacitor.
+=======
+- **The Fast Track**: Once passive income exceeds expenses, break out into the outer circle of high-stakes investments and massive cashflow.
+
+### 👥 Real-time Multiplayer
+- **Firebase Powered**: State-of-the-art synchronization ensures all players see moves and market events instantly.
+- **Dynamic Lobbies**: Create or join rooms with unique game IDs for private sessions.
+- **Financial Ledger**: A live dual-view ledger for personal financial statements and global audit logs.
+>>>>>>> 6b18c4090941a97b1a58427d5a8a172d4e257aa5
 
 ### 🤖 Advanced Game Engine
 - **AI Opponents**: Intelligent bots that make financial decisions based on risk/reward ratios.

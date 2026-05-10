@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export type GamePhase = 'RAT_RACE' | 'FAST_TRACK';
 
 export interface Asset {
@@ -12,10 +13,41 @@ export interface Asset {
 }
 
 export interface Liability {
+=======
+export type Profession = {
+  name: string;
+  salary: number;
+  savings: number;
+  taxes: number;
+  mortgagePayment: number;
+  schoolLoanPayment: number;
+  carLoanPayment: number;
+  creditCardPayment: number;
+  retailPayment: number;
+  otherExpenses: number;
+  perChildExpense: number;
+  liabilities: Liability[];
+};
+
+export type Asset = {
+  id: string;
+  name: string;
+  type: 'STOCK' | 'REAL_ESTATE' | 'BUSINESS' | 'PRECIOUS_METALS' | 'OTHER';
+  cost: number;
+  downPayment?: number;
+  shares?: number;
+  dividend?: number;
+  cashflow?: number;
+  symbol?: string;
+};
+
+export type Liability = {
+>>>>>>> 6b18c4090941a97b1a58427d5a8a172d4e257aa5
   id: string;
   name: string;
   amount: number;
   payment: number;
+<<<<<<< HEAD
 }
 
 export interface Profession {
@@ -44,6 +76,14 @@ export interface FinancialStatement {
   totalIncome: number;
 
   // Expenses
+=======
+};
+
+export type FinancialStatement = {
+  salary: number;
+  passiveIncome: number;
+  totalIncome: number;
+>>>>>>> 6b18c4090941a97b1a58427d5a8a172d4e257aa5
   taxes: number;
   homeMortgagePayment: number;
   schoolLoanPayment: number;
@@ -51,6 +91,7 @@ export interface FinancialStatement {
   creditCardPayment: number;
   retailPayment: number;
   otherExpenses: number;
+<<<<<<< HEAD
   childExpenses: number;
   bankLoanPayment: number;
   totalExpenses: number;
@@ -162,3 +203,37 @@ export interface GameState {
   // Canonical payCash utility
   payCash: (playerId: string, amount: number) => void;
 }
+=======
+  bankLoanPayment: number;
+  childExpenses: number;
+  totalExpenses: number;
+  monthlyCashFlow: number;
+  savings: number;
+  assets: Asset[];
+  liabilities: Liability[];
+  children: number;
+};
+
+export type Player = {
+  id: string;
+  name: string;
+  profession: Profession | null;
+  statement: FinancialStatement;
+  position: number;
+  isFastTrack: boolean;
+  color: string;
+};
+
+export type GameState = {
+  players: Player[];
+  currentPlayerIndex: number;
+  turnPhase: 'ROLL' | 'ACTION' | 'FINALIZE' | 'WAITING';
+  diceRoll: number[];
+  activeCard: any | null;
+  pendingPaydays: number;
+  winner: string | null;
+  history: string[];
+  turnCount: number;
+  activeMacroEvent: any | null;
+};
+>>>>>>> 6b18c4090941a97b1a58427d5a8a172d4e257aa5
