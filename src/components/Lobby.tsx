@@ -32,9 +32,15 @@ export const Lobby = () => {
   const handleJoinOnline = () => {
     if (!joinCode) return;
     const playerId = `guest-${Date.now()}`;
-    setMyPlayerId(playerId);
+    
+    // Join first to get the current state
     joinMultiplayerGame(joinCode.toUpperCase());
-    addPlayer('Guest', '#38A169', currentProf, currentDream.id, false, playerId);
+    
+    // Then add ourselves after a brief delay to ensure we are part of the next sync cycle
+    setTimeout(() => {
+      setMyPlayerId(playerId);
+      addPlayer('Guest', '#38A169', currentProf, currentDream.id, false, playerId);
+    }, 1000);
   };
 
   if (roomCode) {

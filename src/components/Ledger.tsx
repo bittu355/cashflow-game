@@ -7,10 +7,9 @@ import { FinancialControls } from './FinancialControls';
 
 export const Ledger = () => {
   const { players, currentPlayerIndex, haveChild, enterFastTrack, resetGame, myPlayerId } = useGameStore();
-  const isMyTurn = myPlayerId === 'LOCAL' || players[currentPlayerIndex]?.id === myPlayerId;
-  const [isBankModalOpen, setBankModalOpen] = useState(false);
-
   const player = players[currentPlayerIndex];
+  const isMyTurn = myPlayerId === 'LOCAL' || player?.id === myPlayerId;
+  const [isBankModalOpen, setBankModalOpen] = useState(false);
 
   if (!player) return <div className="ledger-area glass-panel" style={{ padding: '2rem' }}>No player active.</div>;
 
@@ -71,7 +70,7 @@ export const Ledger = () => {
                 <span>${l.amount.toLocaleString()}</span>
               </div>
               <div className="item-actions">
-                {statement.cash >= l.amount && (
+                {isMyTurn && !player.isBot && statement.cash >= l.amount && (
                   <button className="btn-pay-small" onClick={() => useGameStore.getState().payLoan(player.id, l.id)}>Pay Off</button>
                 )}
               </div>

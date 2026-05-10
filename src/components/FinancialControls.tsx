@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 
 export const FinancialControls = () => {
-  const { players, currentPlayerIndex, borrowMoney, payLoan } = useGameStore();
+  const { players, currentPlayerIndex, borrowMoney, payLoan, myPlayerId } = useGameStore();
   const player = players[currentPlayerIndex];
+  const isMyTurn = myPlayerId === 'LOCAL' || player?.id === myPlayerId;
   const [loanAmount, setLoanAmount] = useState(1000);
 
-  if (!player || player.isBot) return null;
+  if (!player || player.isBot || !isMyTurn) return null;
 
   return (
     <div className="financial-controls glass-panel animate-fade-in">

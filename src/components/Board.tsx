@@ -284,7 +284,7 @@ export const Board = () => {
                     <Dice3D key={i} value={v} rolling={isRolling} />
                   ))}
                 </div>
-                {!currentPlayer.isBot && !isRolling && (
+                {!currentPlayer.isBot && !isRolling && isMyTurn && (
                   <>
                     <button 
                       className="btn btn-success btn-pop main-roll-btn" 
@@ -334,6 +334,11 @@ export const Board = () => {
                       </button>
                     )}
                   </>
+                )}
+                {!isMyTurn && !currentPlayer.isBot && !isRolling && (
+                  <div style={{ color: 'var(--color-primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>
+                    Waiting for {currentPlayer?.name}...
+                  </div>
                 )}
                 {currentPlayer.isBot && isRolling && (
                    <div style={{ color: 'var(--color-primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px' }}>AI is rolling...</div>

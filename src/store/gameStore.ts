@@ -677,55 +677,10 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      takeLoan: (playerId: string, amount: number) => {
-        get().borrowMoney(playerId, amount);
-      },
 
-      payDebt: (playerId: string, liabilityId: string) => {
-        set((state) => {
-          const players = state.players.map(p => {
-            if (p.id !== playerId) return p;
-            const liability = p.statement.liabilities.find(l => l.id === liabilityId);
-            if (!liability || p.statement.cash < liability.amount) return p;
-
-            const draftStatement = {
-              ...p.statement,
-              cash: p.statement.cash - liability.amount,
-              liabilities: p.statement.liabilities.filter(l => l.id !== liabilityId)
-            };
-
-            get().addHistory({
-              playerId,
-              type: 'SELL',
-              description: `Paid off ${liability.name} ($${liability.amount.toLocaleString()})`,
-              amount: liability.amount,
-              cashflowChange: liability.payment
-            });
-
-            return { ...p, statement: recalculateStatement(draftStatement, p.profession) };
-          });
-          return { players };
-        });
-      },
 
       payLoan: (playerId: string, liabilityId: string) => {
         get().payDebt(playerId, liabilityId);
-      },
-
-      payCash: (playerId: string, amount: number) => {
-        set((state) => {
-          const players = state.players.map(p => {
-            if (p.id !== playerId) return p;
-            return {
-              ...p,
-              statement: {
-                ...p.statement,
-                cash: p.statement.cash - amount
-              }
-            };
-          });
-          return { players };
-        });
       },
 
       declareBankruptcy: (playerId: string) => {
@@ -855,56 +810,7 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      handleMarketEvent: (event) => {
-        set((state) => {
-          const players = state.players.map(p => {
-            const stocks = p.statement.assets.filter(a => a.type === 'STOCK' && a.name === event.symbol);
-            if (stocks.length === 0) return p;
 
-            const updatedAssets = p.statement.assets.map(a => {
-              if (a.type === 'STOCK' && a.name === event.symbol) {
-                const newShares = event.type === 'STOCK_SPLIT' ? (a.shares || 0) * 2 : Math.floor((a.shares || 0) / 2);
-                return { ...a, shares: newShares };
-              }
-              return a;
-            });
-
-            return {
-              ...p,
-              statement: { ...p.statement, assets: updatedAssets }
-            };
-          });
-
-          get().addHistory({
-            playerId: 'system',
-            type: 'SPLIT',
-            description: `${event.symbol} ${event.type === 'STOCK_SPLIT' ? 'Split 2-for-1' : 'Reverse Split 1-for-2'}`,
-            amount: 0,
-            cashflowChange: 0
-          });
-
-          return { players };
-        });
-      },
-
-      transferDeal: (fromPlayerId, toPlayerId, card, fee) => {
-        set((state) => {
-          const players = state.players.map(p => {
-            if (p.id === fromPlayerId) {
-              return { ...p, statement: { ...p.statement, cash: p.statement.cash + fee } };
-            }
-            if (p.id === toPlayerId) {
-              return { ...p, statement: { ...p.statement, cash: p.statement.cash - fee } };
-            }
-            return p;
-          });
-          return { players, activeCard: card }; // The receiver now "owns" the card action
-        });
-      },
-
-      setMyPlayerId: (id) => set({ myPlayerId: id }),
-
-      setAIAction: (action) => set({ lastAIAction: action }),
 
       handleMacroEconomicEvent: (event) => {
         set((state) => {
