@@ -13,17 +13,24 @@ function App() {
 
   if (!hasValidConfig) {
     return (
-      <div className="error-screen glass-panel" style={{ margin: '2rem', padding: '2rem', textAlign: 'center' }}>
-        <h1 style={{ color: 'var(--color-danger)' }}>⚠️ Configuration Missing</h1>
-        <p>Firebase environment variables are not set. This usually happens when deploying without setting up GitHub Secrets or a local .env file.</p>
-        <div style={{ marginTop: '1rem', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', textAlign: 'left', fontSize: '0.8rem' }}>
-          <code>
+      <div className="lobby-overlay">
+        <div className="mesh-gradient-bg" />
+        <div className="glass-panel lobby-card animate-pop-in" style={{ borderColor: 'var(--color-danger)' }}>
+          <div className="error-icon" style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚠️</div>
+          <h1 className="gold-text" style={{ filter: 'hue-rotate(320deg)' }}>Configuration Required</h1>
+          <p className="pencil-text" style={{ margin: '1rem 0', opacity: 0.8 }}>
+            Firebase environment variables are missing. 
+          </p>
+          <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,0,0,0.1)', borderRadius: '12px', fontSize: '0.8rem', textAlign: 'left', fontFamily: 'monospace' }}>
             VITE_FIREBASE_API_KEY<br/>
+            VITE_FIREBASE_AUTH_DOMAIN<br/>
             VITE_FIREBASE_DATABASE_URL<br/>
-            ...
-          </code>
+            VITE_FIREBASE_PROJECT_ID
+          </div>
+          <p className="pencil-text" style={{ marginTop: '2rem', fontSize: '0.9rem' }}>
+            Please check your <code>.env</code> file or GitHub Secrets.
+          </p>
         </div>
-        <p style={{ marginTop: '1rem', opacity: 0.7 }}>Please check the README for setup instructions.</p>
       </div>
     );
   }

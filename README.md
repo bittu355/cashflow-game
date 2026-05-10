@@ -1,15 +1,18 @@
-# 💰 Cashflow: The Multiplayer Financial Engine
+# 💰 Cashflow: Multiplayer Financial Strategy Engine
 
 ![Deploy Status](https://github.com/bittu355/cashflow-game/actions/workflows/firebase-hosting-merge.yml/badge.svg)
 [![Live Demo](https://img.shields.io/badge/PLAY-NOW-success?style=for-the-badge&logo=firebase)](https://cashflow-game-dd5b9.web.app)
 
-A high-performance, real-time digital version of the classic financial literacy board game. Built with a focus on premium aesthetics, robust multiplayer synchronization, and a deep financial logic engine.
+A high-performance, real-time multiplayer strategy game focused on financial literacy and wealth building. Built with a focus on premium 3D aesthetics, robust multiplayer synchronization, and a sophisticated financial logic engine.
 
-![Cashflow Game Banner](public/banner.png)
+## 🌟 Modernized Experience
+- **High-Fidelity 3D Board**: Immersive tabletop perspective with dynamic depth and lighting.
+- **Mobile Optimized**: Fully responsive UI with specific fixes for mobile browsers and "black screen" prevention.
+- **Instant Load**: Branded loading states and optimized asset delivery for a seamless start.
 
 ## 🚀 Experience the Game
 **Click below to start playing instantly:**
-### 👉 [PLAY CASHFLOW NOW](https://cashflow-game-dd5b9.web.app)
+### 👉 [PLAY LIVE DEMO](https://cashflow-game-dd5b9.web.app)
 
 ---
 
