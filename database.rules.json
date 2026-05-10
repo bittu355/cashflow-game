@@ -2,8 +2,10 @@
   "rules": {
     "games": {
       "$gameId": {
+        // Anyone can read a game state if they know the room code
         ".read": "true",
-        ".write": "true"
+        // Only allow writing if the game doesn't have a winner yet, or if it's a new game creation
+        ".write": "!data.exists() || (data.child('winner').val() == null)"
       }
     }
   }

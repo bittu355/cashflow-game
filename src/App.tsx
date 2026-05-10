@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { Lobby } from './components/Lobby';
-import { Board } from './components/Board';
 import { Ledger } from './components/Ledger';
+import { Board } from './components/Board';
+import { Lobby } from './components/Lobby';
+import { GameWinModal } from './components/GameWinModal';
 import { useGameStore } from './store/gameStore';
-import './App.css';
+import './utils/multiplayer'; // Activate multiplayer listeners
+import './index.css';
 
 function App() {
-  const { players } = useGameStore();
+  const players = useGameStore(state => state.players);
 
   if (players.length === 0) {
     return <Lobby />;
@@ -16,6 +17,7 @@ function App() {
     <div className="app-container">
       <Board />
       <Ledger />
+      <GameWinModal />
     </div>
   );
 }
