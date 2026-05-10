@@ -8,10 +8,13 @@
   </head>
   <body>
     <div id="root">
-      <div style="background: #0A0A0F; height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; font-family: sans-serif; color: #D4AF37;">
+      <div id="loading-screen" style="background: #0A0A0F; height: 100dvh; width: 100%; display: flex; align-items: center; justify-content: center; font-family: sans-serif; color: #D4AF37; position: fixed; top: 0; left: 0; z-index: 9999;">
         <div style="text-align: center;">
           <h1 style="font-size: 2rem; letter-spacing: 4px; margin-bottom: 1rem; animation: pulse 2s infinite;">CASHFLOW</h1>
-          <p style="opacity: 0.6; font-size: 0.8rem;">LOADING FINANCIAL ENGINE...</p>
+          <p id="loading-text" style="opacity: 0.6; font-size: 0.8rem; letter-spacing: 2px;">LOADING FINANCIAL ENGINE...</p>
+          <div id="fallback-error" style="display: none; margin-top: 20px; padding: 15px; background: rgba(255,0,0,0.1); border: 1px solid rgba(255,0,0,0.2); border-radius: 8px; color: #ff6b6b; font-size: 0.8rem; max-width: 300px;">
+            The engine failed to start. This might be due to an incompatible browser or private browsing settings.
+          </div>
         </div>
       </div>
       <style>
@@ -19,7 +22,30 @@
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.5; transform: scale(0.98); }
         }
+        body { margin: 0; background: #0A0A0F; }
       </style>
+      <script>
+        // Fail-safe: if the app hasn't mounted in 10 seconds, show the error div
+        setTimeout(() => {
+          const root = document.getElementById('root');
+          const loadingScreen = document.getElementById('loading-screen');
+          // If the loading screen is still there, something is wrong
+          if (loadingScreen && loadingScreen.parentNode === root) {
+            const errDiv = document.getElementById('fallback-error');
+            if (errDiv) errDiv.style.display = 'block';
+            const loadText = document.getElementById('loading-text');
+            if (loadText) loadText.innerText = 'INITIALIZATION TIMEOUT';
+          }
+        }, 10000);
+
+        window.onerror = function(msg, url, line) {
+          const errDiv = document.getElementById('fallback-error');
+          if (errDiv) {
+            errDiv.style.display = 'block';
+            errDiv.innerText = 'Runtime Error: ' + msg + ' (Line: ' + line + ')';
+          }
+        };
+      </script>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

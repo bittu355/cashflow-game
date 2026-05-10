@@ -919,7 +919,18 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: 'cashflow-game-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => {
+        try {
+          // Check if localStorage is available and working
+          const testKey = '__test__';
+          window.localStorage.setItem(testKey, testKey);
+          window.localStorage.removeItem(testKey);
+          return window.localStorage;
+        } catch (e) {
+          console.warn('LocalStorage not available, falling back to session storage:', e);
+          return window.sessionStorage;
+        }
+      }),
     }
   )
 );
