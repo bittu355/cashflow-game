@@ -4,6 +4,7 @@ import { createMultiplayerGame, joinMultiplayerGame, generateGameId, addPlayerTo
 import { PROFESSIONS } from '../data/professions';
 import { DREAMS } from '../data/fastTrack';
 import { recalculateStatement } from '../utils/finance';
+import { useShallow } from 'zustand/react/shallow';
 
 export const Lobby = () => {
   const [mode, setMode] = useState<'SELECT' | 'ONLINE'>('SELECT');
@@ -12,7 +13,13 @@ export const Lobby = () => {
   const [selectedProfIndex, setSelectedProfIndex] = useState(0);
   const [selectedDreamIndex, setSelectedDreamIndex] = useState(0);
   const [roomCode, setRoomCode] = useState<string | null>(null);
-  const { addPlayer, setMyPlayerId, startGame, players = [], myPlayerId } = useGameStore();
+  const { addPlayer, setMyPlayerId, startGame, players = [], myPlayerId } = useGameStore(useShallow(state => ({
+    addPlayer: state.addPlayer,
+    setMyPlayerId: state.setMyPlayerId,
+    startGame: state.startGame,
+    players: state.players,
+    myPlayerId: state.myPlayerId
+  })));
   const isHost = myPlayerId?.startsWith('host-');
 
   const currentProf = PROFESSIONS[selectedProfIndex] || PROFESSIONS[0];

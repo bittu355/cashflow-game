@@ -6,6 +6,7 @@ import { TopNav } from './components/TopNav';
 import { FreedomMeter } from './components/FreedomMeter';
 import { GameWinModal } from './components/GameWinModal';
 import { useGameStore } from './store/gameStore';
+import { useShallow } from 'zustand/react/shallow';
 import { hasValidConfig } from './utils/firebase';
 import './utils/multiplayer'; 
 import './index.css';
@@ -44,7 +45,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 }
 
 const GameContent = () => {
-  const gameStarted = useGameStore(state => state.gameStarted);
+  const gameStarted = useGameStore(useShallow(state => state.gameStarted));
 
   if (!hasValidConfig) {
     return (

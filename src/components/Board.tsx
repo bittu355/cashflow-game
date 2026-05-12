@@ -8,6 +8,8 @@ import { gameAudio } from '../utils/audio';
 import { triggerFastTrackConfetti } from '../utils/celebration';
 import { hapticFeedback } from '../utils/haptics';
 
+import { useShallow } from 'zustand/react/shallow';
+
 export const Board = () => {
   const { 
     players, turnPhase, rollDice, diceRoll, 
@@ -15,7 +17,23 @@ export const Board = () => {
     pendingPaydays, collectPayday, runAITurn,
     isRolling, setRolling, lastAIAction,
     activeMacroEvent, myPlayerId
-  } = useGameStore();
+  } = useGameStore(useShallow(state => ({
+    players: state.players,
+    turnPhase: state.turnPhase,
+    rollDice: state.rollDice,
+    diceRoll: state.diceRoll,
+    currentPlayerIndex: state.currentPlayerIndex,
+    endTurn: state.endTurn,
+    drawCard: state.drawCard,
+    pendingPaydays: state.pendingPaydays,
+    collectPayday: state.collectPayday,
+    runAITurn: state.runAITurn,
+    isRolling: state.isRolling,
+    setRolling: state.setRolling,
+    lastAIAction: state.lastAIAction,
+    activeMacroEvent: state.activeMacroEvent,
+    myPlayerId: state.myPlayerId
+  })));
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
@@ -35,7 +53,8 @@ export const Board = () => {
         setScale(1);
       }
     };
-    handleResize();
+    
+    handleResize(); // Call it here, safely inside useEffect
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
