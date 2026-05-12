@@ -1,33 +1,30 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
-// Your web app's Firebase configuration
+// Bulletproof Firebase configuration with hardcoded production fallbacks
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyD3otP1d5bVQaZQN3WENXrDPidQFNAf1a0",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "cashflow-game-dd5b9.firebaseapp.com",
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://cashflow-game-dd5b9-default-rtdb.firebaseio.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "cashflow-game-dd5b9",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "cashflow-game-dd5b9.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "432495665083",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:432495665083:web:3f2d8df4e86900cf4dae9e",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-G3MNW5ECLF"
+  apiKey: "AIzaSyD3otP1d5bVQaZQN3WENXrDPidQFNAf1a0",
+  authDomain: "cashflow-game-dd5b9.firebaseapp.com",
+  databaseURL: "https://cashflow-game-dd5b9-default-rtdb.firebaseio.com",
+  projectId: "cashflow-game-dd5b9",
+  storageBucket: "cashflow-game-dd5b9.firebasestorage.app",
+  messagingSenderId: "432495665083",
+  appId: "1:432495665083:web:3f2d8df4e86900cf4dae9e",
+  measurementId: "G-G3MNW5ECLF"
 };
 
-const isConfigValid = !!firebaseConfig.apiKey && !!firebaseConfig.databaseURL;
+// Log for debugging (will be visible in browser console)
+console.log("Initializing Firebase with project:", firebaseConfig.projectId);
 
 let app;
-let db: any;
+let db: any = null;
 
 try {
-  if (isConfigValid) {
-    app = initializeApp(firebaseConfig);
-    db = getDatabase(app);
-  } else {
-    console.error("Firebase config is missing! Please check your .env file or GitHub Secrets.");
-  }
+  app = initializeApp(firebaseConfig);
+  db = getDatabase(app);
 } catch (error) {
   console.error("Firebase initialization failed:", error);
 }
 
 export { db };
-export const hasValidConfig = isConfigValid;
+export const hasValidConfig = true; // Always true because it's hardcoded now

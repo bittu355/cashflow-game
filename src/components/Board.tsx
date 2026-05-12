@@ -6,6 +6,7 @@ import { FastTrackBoard } from './FastTrackBoard';
 import { Dice3D } from './Dice3D';
 import { gameAudio } from '../utils/audio';
 import { triggerFastTrackConfetti } from '../utils/celebration';
+import { hapticFeedback } from '../utils/haptics';
 
 export const Board = () => {
   const { 
@@ -65,7 +66,6 @@ export const Board = () => {
     return (
       <div className="board-area">
         <FastTrackBoard />
-        <CardModal />
       </div>
     );
   }
@@ -190,6 +190,7 @@ export const Board = () => {
                         onClick={() => {
                           setRolling(true);
                           gameAudio.playSFX('dice');
+                          hapticFeedback.medium();
                           setTimeout(() => {
                             rollDice(1);
                             setRolling(false);
@@ -274,7 +275,7 @@ export const Board = () => {
                         )}
 
                         {pendingPaydays > 0 && (
-                          <button className="btn btn-pop payday-special" onClick={collectPayday}>
+                          <button className="btn btn-pop payday-special animate-payday-glow" onClick={collectPayday}>
                             COLLECT PAYDAY! ({pendingPaydays})
                           </button>
                         )}

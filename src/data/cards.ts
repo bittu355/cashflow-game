@@ -41,7 +41,14 @@ export const SMALL_DEALS: GameCard[] = [
   
   // Small Businesses
   { id: 'sd_biz_1', type: 'SMALL_DEAL', title: 'Part-Time Business', description: 'Start a small distribution business.', cost: 1000, downPayment: 1000, cashflow: 100, assetType: 'BUSINESS', roi: '120%', actionText: 'Start Business' },
-  { id: 'sd_biz_2', type: 'SMALL_DEAL', title: 'Network Marketing', description: 'Build your own team. High growth potential.', cost: 500, downPayment: 500, cashflow: 200, assetType: 'BUSINESS', roi: '480%', actionText: 'Join' }
+  { id: 'sd_biz_2', type: 'SMALL_DEAL', title: 'Network Marketing', description: 'Build your own team. High growth potential.', cost: 500, downPayment: 500, cashflow: 200, assetType: 'BUSINESS', roi: '480%', actionText: 'Join' },
+  { id: 'sd_biz_3', type: 'SMALL_DEAL', title: 'Vending Machine Route', description: '6 machines in local offices. Steady cash.', cost: 3000, downPayment: 3000, cashflow: 150, assetType: 'BUSINESS', roi: '60%', actionText: 'Buy Route' },
+  { id: 'sd_biz_4', type: 'SMALL_DEAL', title: 'Start a Blog', description: 'Monetize your expertise. Requires time and $500 setup.', cost: 500, downPayment: 500, cashflow: 50, assetType: 'BUSINESS', roi: '120%', actionText: 'Start Blog' },
+  { id: 'sd_stock_7', type: 'SMALL_DEAL', title: 'Stock: ZRRO', description: 'Emerging biotech company. High risk!', cost: 5, downPayment: 5, cashflow: 0, assetType: 'STOCK', actionText: 'Buy Shares' },
+  { id: 'sd_stock_8', type: 'SMALL_DEAL', title: 'Stock: ZRRO', description: 'Biotech company hits a breakthrough.', cost: 40, downPayment: 40, cashflow: 0, assetType: 'STOCK', actionText: 'Buy Shares' },
+  { id: 'sd_house_5', type: 'SMALL_DEAL', title: 'Mobile Home - 2Br/1Ba', description: 'Cheap entry into real estate. High yield.', cost: 20000, downPayment: 2000, cashflow: 150, assetType: 'REAL_ESTATE', roi: '90%', actionText: 'Buy' },
+  { id: 'sd_house_6', type: 'SMALL_DEAL', title: 'Duplex - 2 units', description: 'Both sides rented. Solid cashflow.', cost: 60000, downPayment: 6000, cashflow: 200, assetType: 'REAL_ESTATE', roi: '40%', actionText: 'Buy' },
+  { id: 'sd_item_1', type: 'SMALL_DEAL', title: 'Rare Stamp Collection', description: 'Hobbyist selling his collection. Potential for appreciation.', cost: 1000, downPayment: 1000, cashflow: 0, assetType: 'COIN', actionText: 'Buy Stamps' }
 ];
 
 export const BIG_DEALS: GameCard[] = [
@@ -49,15 +56,19 @@ export const BIG_DEALS: GameCard[] = [
   { id: 'bd_1', type: 'BIG_DEAL', title: 'Apartment House - 8 Units', description: 'Fully occupied. Stable income.', cost: 160000, downPayment: 32000, cashflow: 1200, assetType: 'REAL_ESTATE', roi: '45%', actionText: 'Buy' },
   { id: 'bd_2', type: 'BIG_DEAL', title: 'Apartment House - 12 Units', description: 'Great location near downtown.', cost: 240000, downPayment: 48000, cashflow: 1800, assetType: 'REAL_ESTATE', roi: '45%', actionText: 'Buy' },
   { id: 'bd_3', type: 'BIG_DEAL', title: 'Apartment House - 24 Units', description: 'Large complex, needs professional management.', cost: 480000, downPayment: 80000, cashflow: 3000, assetType: 'REAL_ESTATE', roi: '45%', actionText: 'Buy' },
+  { id: 'bd_3b', type: 'BIG_DEAL', title: 'Apartment Complex - 60 Units', description: 'Massive residential investment.', cost: 1200000, downPayment: 200000, cashflow: 7500, assetType: 'REAL_ESTATE', roi: '45%', actionText: 'Buy' },
   
   // Commercial
   { id: 'bd_4', type: 'BIG_DEAL', title: 'Shopping Mall', description: 'Anchor tenants secured. Excellent cashflow.', cost: 1200000, downPayment: 200000, cashflow: 8000, assetType: 'REAL_ESTATE', roi: '48%', actionText: 'Buy Mall' },
+  { id: 'bd_4b', type: 'BIG_DEAL', title: 'Professional Building', description: 'Doctors and lawyers as tenants.', cost: 600000, downPayment: 100000, cashflow: 4000, assetType: 'REAL_ESTATE', roi: '48%', actionText: 'Buy Building' },
   { id: 'bd_5', type: 'BIG_DEAL', title: 'Mini-Storage Facility', description: 'High demand, low overhead.', cost: 300000, downPayment: 60000, cashflow: 2500, assetType: 'BUSINESS', roi: '50%', actionText: 'Buy Facility' },
+  { id: 'bd_5b', type: 'BIG_DEAL', title: 'Industrial Warehouse', description: 'Logistics company leasing for 10 years.', cost: 800000, downPayment: 150000, cashflow: 6000, assetType: 'BUSINESS', roi: '48%', actionText: 'Buy Warehouse' },
   
   // Businesses
   { id: 'bd_6', type: 'BIG_DEAL', title: 'Automated Car Wash', description: 'Passive income machine.', cost: 250000, downPayment: 50000, cashflow: 2000, assetType: 'BUSINESS', roi: '48%', actionText: 'Buy Car Wash' },
   { id: 'bd_7', type: 'BIG_DEAL', title: 'Pizza Franchise', description: 'Established brand, busy location.', cost: 150000, downPayment: 30000, cashflow: 1200, assetType: 'BUSINESS', roi: '48%', actionText: 'Buy Franchise' },
-  { id: 'bd_8', type: 'BIG_DEAL', title: 'Software Company', description: 'Tech startup with positive earnings.', cost: 500000, downPayment: 100000, cashflow: 4500, assetType: 'BUSINESS', roi: '54%', actionText: 'Buy Company' }
+  { id: 'bd_8', type: 'BIG_DEAL', title: 'Software Company', description: 'Tech startup with positive earnings.', cost: 500000, downPayment: 100000, cashflow: 4500, assetType: 'BUSINESS', roi: '54%', actionText: 'Buy Company' },
+  { id: 'bd_9', type: 'BIG_DEAL', title: 'Bed & Breakfast', description: 'Historic home converted for tourists.', cost: 400000, downPayment: 80000, cashflow: 3500, assetType: 'BUSINESS', roi: '52%', actionText: 'Buy B&B' }
 ];
 
 export const DOODADS: GameCard[] = [
@@ -70,7 +81,9 @@ export const DOODADS: GameCard[] = [
   { id: 'd_7', type: 'DOODAD', title: 'Dental Work', description: 'Root canal needed. Pay $600.', cost: 600, actionText: 'Pay' },
   { id: 'd_8', type: 'DOODAD', title: 'Family Vacation', description: 'A week at the beach. Pay $2500.', cost: 2500, actionText: 'Pay' },
   { id: 'd_9', type: 'DOODAD', title: 'New Golf Clubs', description: 'Upgrade your swing. Pay $800.', cost: 800, actionText: 'Pay' },
-  { id: 'd_10', type: 'DOODAD', title: 'Charity Gala', description: 'Support a good cause. Pay $500.', cost: 500, actionText: 'Pay' }
+  { id: 'd_10', type: 'DOODAD', title: 'Charity Gala', description: 'Support a good cause. Pay $500.', cost: 500, actionText: 'Pay' },
+  { id: 'd_11', type: 'DOODAD', title: 'Luxury Watch', description: 'A reward for your hard work. Pay $2000.', cost: 2000, actionText: 'Pay' },
+  { id: 'd_12', type: 'DOODAD', title: 'European Cruise', description: '14 days of luxury. Pay $6000.', cost: 6000, actionText: 'Pay' }
 ];
 
 export const MARKET: GameCard[] = [
@@ -83,7 +96,9 @@ export const MARKET: GameCard[] = [
   { id: 'm_7', type: 'MARKET', title: 'Inflation', description: 'Cost of living increases. Other expenses go up by 10% for everyone.', cost: 0, actionText: 'Apply Inflation', isGlobal: true },
   { id: 'm_8', type: 'MARKET', title: 'Recession', description: 'Business income drops. All business cashflow reduced by 20%.', cost: 0, actionText: 'Apply Recession', isGlobal: true },
   { id: 'm_9', type: 'MARKET', title: 'Gold Prices Soar', description: 'Economic uncertainty drives gold up. Sell 1oz Gold for $800.', cost: 800, assetType: 'COIN', actionText: 'Sell Asset' },
-  { id: 'm_10', type: 'MARKET', title: 'Land Developer', description: 'Shopping mall planned nearby. Sell 10-Acre Plot for $50,000.', cost: 50000, assetType: 'REAL_ESTATE', actionText: 'Sell Land' }
+  { id: 'm_10', type: 'MARKET', title: 'Land Developer', description: 'Shopping mall planned nearby. Sell 10-Acre Plot for $50,000.', cost: 50000, assetType: 'REAL_ESTATE', actionText: 'Sell Land' },
+  { id: 'm_11', type: 'MARKET', title: 'Tech IPO: ZRRO', description: 'ZRRO goes public! Everyone must sell ZRRO shares for $60.', cost: 60, assetType: 'STOCK', actionText: 'Execute Sale', isGlobal: true },
+  { id: 'm_12', type: 'MARKET', title: 'Real Estate Boom', description: 'Market is hot. Sell any Real Estate asset for 2x its original cost.', cost: 2, assetType: 'REAL_ESTATE', actionText: 'Sell Asset' }
 ];
 
 export const ALL_CARDS = { SMALL_DEALS, BIG_DEALS, DOODADS, MARKET };

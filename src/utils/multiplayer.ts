@@ -1,18 +1,15 @@
-import { ref, onValue, set } from "firebase/database";
+import { ref, onValue, set, update, runTransaction } from "firebase/database";
 import { db } from "./firebase";
 import { useGameStore } from "../store/gameStore";
-import type { GameState } from "../types/game";
+import type { GameState, Player } from "../types/game";
 
 let currentGameId: string | null = null;
 let unsubscribeFirebase: (() => void) | null = null;
 let isSyncingFromFirebase = false;
+let pushTimeout: any = null;
 
-// Generate a random room code
 export const generateGameId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-/**
- * Cleans the state for Firebase storage (removing non-serializable parts)
- */
 const getCleanState = (state: any) => {
   return {
     players: state.players || [],
@@ -24,13 +21,12 @@ const getCleanState = (state: any) => {
     winner: state.winner || null,
     history: state.history || [],
     turnCount: state.turnCount || 0,
-    activeMacroEvent: state.activeMacroEvent || null
+    activeMacroEvent: state.activeMacroEvent || null,
+    gameStarted: state.gameStarted || false,
+    lastUpdate: Date.now()
   };
 };
 
-/**
- * Initializes a new multiplayer game in Firebase.
- */
 export const createMultiplayerGame = async (gameId: string) => {
   const initialState = useGameStore.getState();
   const gameRef = ref(db, `games/${gameId}`);
@@ -41,8 +37,19 @@ export const createMultiplayerGame = async (gameId: string) => {
 };
 
 /**
- * Connects to an existing multiplayer game and listens for updates.
+ * Safely adds a player to an online game using a transaction
  */
+export const addPlayerToOnlineGame = async (gameId: string, player: Player) => {
+  const playersRef = ref(db, `games/${gameId}/players`);
+  
+  await runTransaction(playersRef, (currentPlayers) => {
+    const list = currentPlayers || [];
+    // Check if player already exists
+    if (list.some((p: any) => p.id === player.id)) return list;
+    return [...list, player];
+  });
+};
+
 export const joinMultiplayerGame = (gameId: string) => {
   if (unsubscribeFirebase) {
     unsubscribeFirebase();
@@ -54,37 +61,42 @@ export const joinMultiplayerGame = (gameId: string) => {
   const unsubscribe = onValue(gameRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
+      // If we have a newer local update, ignore stale Firebase data
+      const localState = useGameStore.getState() as any;
+      if (data.lastUpdate < (localState.lastUpdate || 0)) return;
+
       isSyncingFromFirebase = true;
       useGameStore.setState((state) => ({
         ...state,
         ...data,
-        // Ensure we don't accidentally wipe out local-only state if it's missing from Firebase
         players: data.players || state.players,
         currentPlayerIndex: typeof data.currentPlayerIndex === 'number' ? data.currentPlayerIndex : state.currentPlayerIndex,
         history: data.history || state.history,
+        gameStarted: data.gameStarted ?? state.gameStarted
       }));
-      // Reset the flag on the next tick
+      
       setTimeout(() => {
         isSyncingFromFirebase = false;
-      }, 0);
+      }, 50);
     }
   });
 
   unsubscribeFirebase = () => unsubscribe();
 };
 
-/**
- * Pushes local state changes to Firebase.
- */
 export const pushStateToFirebase = (state: GameState) => {
   if (!currentGameId || isSyncingFromFirebase) return;
 
-  const gameRef = ref(db, `games/${currentGameId}`);
-  const cleanState = getCleanState(state);
-  set(gameRef, cleanState);
+  // Debounce pushes to avoid rate limiting and excessive writes
+  if (pushTimeout) clearTimeout(pushTimeout);
+  
+  pushTimeout = setTimeout(() => {
+    const gameRef = ref(db, `games/${currentGameId}`);
+    const cleanState = getCleanState(state);
+    update(gameRef, cleanState);
+  }, 100);
 };
 
-// Subscribe to Zustand store changes to automatically push to Firebase
 useGameStore.subscribe((state) => {
   if (currentGameId && !isSyncingFromFirebase) {
     pushStateToFirebase(state);

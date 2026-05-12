@@ -12,11 +12,14 @@
   --color-surface: rgba(20, 20, 30, 0.7);
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(16px);
   --font-main: 'Outfit', sans-serif;
   --font-heading: 'Playpen Sans', cursive;
   --font-accent: 'Architects Daughter', cursive;
   --board-thickness: 12px;
   --depth-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  --premium-gold: linear-gradient(135deg, #F9E29C 0%, #D4AF37 50%, #B8860B 100%);
+  --freedom-gradient: linear-gradient(90deg, #D4AF37, #F9E29C);
 }
 
 * {
@@ -172,9 +175,17 @@ body {
 /* Glass Panels */
 .glass-panel {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-premium {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
 /* Animations */
@@ -198,6 +209,16 @@ body {
   50% { transform: translateY(-10px); }
 }
 
+@keyframes gold-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.5); }
+}
+
+@keyframes progress-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .animate-pop-in {
   animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
@@ -212,6 +233,45 @@ body {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+.animate-gold-glow {
+  animation: gold-glow 3s ease-in-out infinite;
+}
+
+.progress-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2s infinite linear;
+}
+
+@keyframes payday-glow {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 30px rgba(212, 175, 55, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+}
+
+.animate-payday-glow {
+  animation: payday-glow 1s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes card-reveal-3d {
+  0% { transform: perspective(1000px) rotateY(-90deg) scale(0.5); opacity: 0; }
+  100% { transform: perspective(1000px) rotateY(0deg) scale(1); opacity: 1; }
+}
+
+.animate-card-reveal {
+  animation: card-reveal-3d 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes freedom-surge {
+  0% { filter: brightness(1); transform: scale(1); }
+  50% { filter: brightness(1.5); transform: scale(1.05); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+
+.animate-freedom-surge {
+  animation: freedom-surge 0.8s ease-in-out forwards;
 }
 
 /* Ledger Area */
@@ -455,4 +515,37 @@ body {
   margin-top: -2px;
   opacity: 0.8;
   transform: translateZ(2px);
+}
+
+/* Lobby Player List */
+.player-list-lobby {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.player-lobby-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.player-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.start-btn {
+  width: 100%;
+  padding: 1.2rem !important;
+  font-size: 1.1rem !important;
+  letter-spacing: 4px !important;
 }

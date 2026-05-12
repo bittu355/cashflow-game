@@ -53,10 +53,12 @@ export const Ledger = () => {
   };
 
   return (
-    <div className={`ledger-area glass-panel ${isMobileOpen ? 'expanded' : ''} ${isMyTurn ? 'my-turn-glow' : ''}`}>
+    <div className={`ledger-area glass-premium ${isMobileOpen ? 'expanded' : ''} ${isMyTurn ? 'my-turn-glow' : ''}`}>
       <div className="mobile-handle" onClick={() => setIsMobileOpen(!isMobileOpen)}>
-        <div className="handle-bar" />
-        <span className="handle-label">{isMobileOpen ? 'TAP TO CLOSE' : 'TAP FOR FINANCIALS'}</span>
+        <div className="handle-bar-wrapper">
+          <div className="handle-bar animate-gold-glow" />
+        </div>
+        <span className="handle-label">{isMobileOpen ? 'COLLAPSE FINANCIALS' : 'EXPAND FINANCIALS'}</span>
       </div>
       
       <div className="ledger-content-inner">
@@ -231,36 +233,38 @@ export const Ledger = () => {
           display: flex;
           flex-direction: column;
           height: 100%;
-          transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+          transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+          border-left: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(10, 10, 15, 0.8);
         }
 
         .ledger-area.expanded {
           transform: translateY(0) !important;
-          z-index: 1000;
+          z-index: 2000;
         }
 
-        .ledger-handle-wrapper {
+        .handle-bar-wrapper {
           width: 100%;
-          height: 30px;
-          display: none;
-          align-items: center;
+          height: 6px;
+          display: flex;
           justify-content: center;
-          cursor: pointer;
+          margin-bottom: 4px;
         }
 
-        .ledger-handle {
-          width: 40px;
-          height: 4px;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 2px;
+        .handle-bar {
+          width: 50px;
+          height: 5px;
+          background: var(--color-primary);
+          border-radius: 10px;
+          opacity: 0.8;
         }
 
         .ledger-content-inner {
           display: flex;
           flex-direction: column;
           height: 100%;
-          padding: 1.5rem;
-          gap: 1.5rem;
+          padding: 1.2rem;
+          gap: 1.2rem;
           overflow: hidden;
         }
 

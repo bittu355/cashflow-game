@@ -173,6 +173,16 @@ export const FastTrackBoard = () => {
                             endTurn();
                           }}>BUY DREAM</button>
                         )}
+                        
+                        {(FAST_TRACK_SPACES[currentPlayer.position].id === 'tax-audit' || 
+                          FAST_TRACK_SPACES[currentPlayer.position].id === 'lawsuit' || 
+                          FAST_TRACK_SPACES[currentPlayer.position].id === 'divorce') && (
+                          <button className="btn btn-danger btn-pop" onClick={() => {
+                            const type = FAST_TRACK_SPACES[currentPlayer.position].id.replace('-', '_').toUpperCase() as any;
+                            useGameStore.getState().resolveFastTrackPenalty(currentPlayer.id, type);
+                            endTurn();
+                          }}>RESOLVE {FAST_TRACK_SPACES[currentPlayer.position].label}</button>
+                        )}
 
                         {pendingPaydays > 0 && (
                           <button className="btn btn-pop payday-special" onClick={collectPayday}>

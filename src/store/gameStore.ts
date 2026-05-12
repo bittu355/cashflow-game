@@ -25,7 +25,9 @@ export const useGameStore = create<GameState>()(
       turnCount: 0,
       activeMacroEvent: null,
       myPlayerId: null,
+      gameStarted: false,
       setMyPlayerId: (id) => set({ myPlayerId: id }),
+      startGame: () => set({ gameStarted: true }),
 
       setRolling: (rolling) => set({ isRolling: rolling }),
       setAIAction: (action) => set({ lastAIAction: action }),
@@ -85,7 +87,7 @@ export const useGameStore = create<GameState>()(
         };
 
         // Ensure perfect starting math
-        newPlayer.statement = recalculateStatement(newPlayer.statement, profession);
+        newPlayer.statement = recalculateStatement(newPlayer.statement, profession, newPlayer.phase);
 
         set((state) => ({
           players: [...state.players, newPlayer]
@@ -213,7 +215,7 @@ export const useGameStore = create<GameState>()(
 
         const finalPlayers = get().players.map(p => ({
           ...p,
-          statement: recalculateStatement(p.statement, p.profession)
+          statement: recalculateStatement(p.statement, p.profession, p.phase)
         }));
         
         set({ players: finalPlayers });
@@ -249,7 +251,7 @@ export const useGameStore = create<GameState>()(
 
             return {
               ...p,
-              statement: recalculateStatement(draftStatement, p.profession)
+              statement: recalculateStatement(draftStatement, p.profession, p.phase)
             };
           });
 
@@ -299,7 +301,7 @@ export const useGameStore = create<GameState>()(
 
             return {
               ...p,
-              statement: recalculateStatement(draftStatement, p.profession)
+              statement: recalculateStatement(draftStatement, p.profession, p.phase)
             };
           });
           gameAudio.playSFX('cash');
@@ -321,7 +323,7 @@ export const useGameStore = create<GameState>()(
 
             return {
               ...p,
-              statement: recalculateStatement(draftStatement, p.profession)
+              statement: recalculateStatement(draftStatement, p.profession, p.phase)
             };
           });
           get().addHistory({ playerId, type: 'BUY', description: `Bought ${asset.name}`, amount: asset.downPayment, cashflowChange: asset.cashflow });
@@ -351,7 +353,7 @@ export const useGameStore = create<GameState>()(
 
             return {
               ...p,
-              statement: recalculateStatement(draftStatement, p.profession)
+              statement: recalculateStatement(draftStatement, p.profession, p.phase)
             };
           });
           gameAudio.playSFX('cash');
@@ -388,7 +390,7 @@ export const useGameStore = create<GameState>()(
 
             return {
               ...p,
-              statement: recalculateStatement(draftStatement, p.profession)
+              statement: recalculateStatement(draftStatement, p.profession, p.phase)
             };
           });
           return { players };
@@ -454,8 +456,8 @@ export const useGameStore = create<GameState>()(
               if (asset.type === 'STOCK' && (asset.name === event.symbol || asset.name.includes(event.symbol))) {
                 const multiplier = event.type === 'STOCK_SPLIT' ? 2 : 0.5;
                 const newShares = Math.floor((asset.shares || 0) * multiplier);
-                const newCost = asset.cost / multiplier; 
-                const newDividend = (asset.dividend || 0) / multiplier;
+                const newCost = Math.round(asset.cost / multiplier); 
+                const newDividend = Math.round((asset.dividend || 0) / multiplier);
                 
                 return { 
                    ...asset, 
@@ -470,7 +472,7 @@ export const useGameStore = create<GameState>()(
 
             return {
               ...p,
-              statement: recalculateStatement({ ...p.statement, assets: updatedAssets }, p.profession)
+              statement: recalculateStatement({ ...p.statement, assets: updatedAssets }, p.profession, p.phase)
             };
           });
           return { players };
@@ -487,8 +489,8 @@ export const useGameStore = create<GameState>()(
           const downPayment = card.downPayment || card.cost || 0;
           
           if (isPartnership) {
-            const halfDown = downPayment / 2;
-            const halfCashflow = (card.cashflow || 0) / 2;
+            const halfDown = Math.round(downPayment / 2);
+            const halfCashflow = Math.round((card.cashflow || 0) / 2);
 
             if (seller.statement.cash < halfDown || buyer.statement.cash < halfDown) return state;
 
@@ -496,7 +498,7 @@ export const useGameStore = create<GameState>()(
               id: `asset-${Date.now()}`,
               name: `PARTNER: ${card.title}`,
               type: card.assetType || 'REAL_ESTATE',
-              cost: (card.cost || 0) / 2,
+              cost: Math.round((card.cost || 0) / 2),
               downPayment: halfDown,
               cashflow: halfCashflow
             };
@@ -508,7 +510,7 @@ export const useGameStore = create<GameState>()(
                   cash: p.statement.cash - halfDown,
                   assets: [...p.statement.assets, newAsset]
                 };
-                return { ...p, statement: recalculateStatement(draftStatement, p.profession) };
+                return { ...p, statement: recalculateStatement(draftStatement, p.profession, p.phase) };
               }
               return p;
             });
@@ -548,7 +550,7 @@ export const useGameStore = create<GameState>()(
                   cash: p.statement.cash - totalCostForBuyer,
                   assets: [...p.statement.assets, newAsset]
                 };
-                return { ...p, statement: recalculateStatement(draftStatement, p.profession) };
+                return { ...p, statement: recalculateStatement(draftStatement, p.profession, p.phase) };
               }
               return p;
             });
@@ -570,12 +572,12 @@ export const useGameStore = create<GameState>()(
         set((state) => {
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
-            const charityCost = p.statement.totalIncome * 0.1;
+            const charityCost = Math.round(p.statement.totalIncome * 0.1);
             if (p.statement.cash < charityCost) return p;
 
             const draftStatement = {
               ...p.statement,
-              cash: p.statement.cash - charityCost
+              cash: Math.round(p.statement.cash - charityCost)
             };
 
             get().addHistory({
@@ -589,7 +591,7 @@ export const useGameStore = create<GameState>()(
             return { 
               ...p, 
               charityTurnsRemaining: 3,
-              statement: recalculateStatement(draftStatement, p.profession)
+              statement: recalculateStatement(draftStatement, p.profession, p.phase)
             };
           });
           return { players };
@@ -632,7 +634,7 @@ export const useGameStore = create<GameState>()(
           const players = state.players.map(p => {
             if (p.id !== playerId) return p;
             
-            const totalSaleValue = p.statement.assets.reduce((sum, a) => sum + (a.downPayment * 0.5), 0);
+            const totalSaleValue = Math.round(p.statement.assets.reduce((sum, a) => sum + (a.downPayment * 0.5), 0));
             
             const draftStatement = {
               ...p.statement,
@@ -654,7 +656,7 @@ export const useGameStore = create<GameState>()(
               ...p,
               isBankrupt: true,
               lostTurns: 3,
-              statement: recalculateStatement(draftStatement, p.profession)
+              statement: recalculateStatement(draftStatement, p.profession, p.phase)
             };
           });
           return { players };
@@ -724,7 +726,7 @@ export const useGameStore = create<GameState>()(
             let description = "";
 
             if (type === 'TAX_AUDIT' || type === 'LAWSUIT') {
-              penaltyAmount = Math.floor(p.statement.cash * 0.5);
+              penaltyAmount = Math.round(p.statement.cash * 0.5);
               description = `Settled ${type === 'TAX_AUDIT' ? 'Tax Audit' : 'Lawsuit'} for $${penaltyAmount.toLocaleString()}`;
             } else if (type === 'DIVORCE') {
               penaltyAmount = p.statement.cash;
@@ -743,7 +745,7 @@ export const useGameStore = create<GameState>()(
               ...p,
               statement: {
                 ...p.statement,
-                cash: p.statement.cash - penaltyAmount
+                cash: Math.max(0, p.statement.cash - penaltyAmount)
               }
             };
           });
@@ -779,7 +781,7 @@ export const useGameStore = create<GameState>()(
 
             return {
               ...p,
-              statement: recalculateStatement(draftStatement, p.profession)
+              statement: recalculateStatement(draftStatement, p.profession, p.phase)
             };
           });
           return { players, activeMacroEvent: { type: event, turnsRemaining: 5 } };
@@ -795,9 +797,9 @@ export const useGameStore = create<GameState>()(
           activeCard: null,
           pendingPaydays: 0,
           winner: null,
-          history: [],
           turnCount: 0,
-          activeMacroEvent: null
+          activeMacroEvent: null,
+          gameStarted: false
         });
         gameAudio.playSFX('news');
       },

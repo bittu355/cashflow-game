@@ -6,12 +6,33 @@ import type { FinancialStatement, Profession } from '../types/game';
  */
 export const recalculateStatement = (
   statement: FinancialStatement, 
-  profession: Profession | null
+  profession: Profession | null,
+  phase: 'RAT_RACE' | 'FAST_TRACK' = 'RAT_RACE'
 ): FinancialStatement => {
   if (!profession) return statement;
 
+  if (phase === 'FAST_TRACK') {
+    return {
+      ...statement,
+      salary: 0,
+      passiveIncome: 0,
+      totalIncome: statement.fastTrackStartingIncome || 0,
+      taxes: 0,
+      homeMortgagePayment: 0,
+      schoolLoanPayment: 0,
+      carLoanPayment: 0,
+      creditCardPayment: 0,
+      retailPayment: 0,
+      otherExpenses: 0,
+      childExpenses: 0,
+      bankLoanPayment: 0,
+      totalExpenses: 0,
+      monthlyCashFlow: statement.fastTrackStartingIncome || 0
+    };
+  }
+
   // 1. Calculate Passive Income from Assets
-  const passiveIncome = statement.assets.reduce((sum, asset) => {
+  const passiveIncome = Math.round(statement.assets.reduce((sum, asset) => {
     // Only add cashflow if it's real estate or business. Stocks use dividends.
     if (asset.type === 'REAL_ESTATE' || asset.type === 'BUSINESS') {
       return sum + (asset.cashflow || 0);
@@ -20,27 +41,26 @@ export const recalculateStatement = (
       return sum + (asset.shares * asset.dividend);
     }
     return sum;
-  }, 0);
+  }, 0));
 
-  const totalIncome = statement.salary + passiveIncome;
+  const totalIncome = Math.round(statement.salary + passiveIncome);
   
   // 2. Calculate Expenses from Liabilities
-  const bankLoanPayment = statement.liabilities
+  const bankLoanPayment = Math.round(statement.liabilities
     .filter(l => l.name === 'Bank Loan' || l.id === 'bank_loan')
-    .reduce((sum, l) => sum + l.payment, 0);
+    .reduce((sum, l) => sum + l.payment, 0));
   
   // Dynamic liability payments based on what's left in the statement.liabilities
-  const mortgagePayment = statement.liabilities.find(l => l.id === 'mortgage')?.payment || 0;
-  const schoolLoanPayment = statement.liabilities.find(l => l.id === 'school')?.payment || 0;
-  const carLoanPayment = statement.liabilities.find(l => l.id === 'car')?.payment || 0;
-  const creditCardPayment = statement.liabilities.find(l => l.id === 'credit')?.payment || 0;
-  const retailPayment = statement.liabilities.find(l => l.id === 'retail')?.payment || 0;
+  const mortgagePayment = Math.round(statement.liabilities.find(l => l.id === 'mortgage')?.payment || 0);
+  const schoolLoanPayment = Math.round(statement.liabilities.find(l => l.id === 'school')?.payment || 0);
+  const carLoanPayment = Math.round(statement.liabilities.find(l => l.id === 'car')?.payment || 0);
+  const creditCardPayment = Math.round(statement.liabilities.find(l => l.id === 'credit')?.payment || 0);
+  const retailPayment = Math.round(statement.liabilities.find(l => l.id === 'retail')?.payment || 0);
 
-  const childExpenses = statement.children * profession.perChildExpense;
+  const childExpenses = Math.round(statement.children * profession.perChildExpense);
   
   // Total Expenses = Taxes + Other + Child + All Liability Payments
-  // Note: taxes and otherExpenses are now taken from the statement itself to allow for Macro Events
-  const totalExpenses = 
+  const totalExpenses = Math.round(
     statement.taxes + 
     statement.otherExpenses + 
     childExpenses + 
@@ -48,11 +68,12 @@ export const recalculateStatement = (
     schoolLoanPayment +
     carLoanPayment +
     creditCardPayment +
-    retailPayment +
-    bankLoanPayment;
+    retailPayment + 
+    bankLoanPayment
+  );
 
   // 3. Calculate Cash Flow
-  const monthlyCashFlow = totalIncome - totalExpenses;
+  const monthlyCashFlow = Math.round(totalIncome - totalExpenses);
 
   return {
     ...statement,

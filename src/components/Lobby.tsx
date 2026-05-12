@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { createMultiplayerGame, joinMultiplayerGame, generateGameId } from '../utils/multiplayer';
+import { createMultiplayerGame, joinMultiplayerGame, generateGameId, addPlayerToOnlineGame } from '../utils/multiplayer';
 import { PROFESSIONS } from '../data/professions';
 import { DREAMS } from '../data/fastTrack';
+import { recalculateStatement } from '../utils/finance';
 
 export const Lobby = () => {
   const [mode, setMode] = useState<'SELECT' | 'ONLINE'>('SELECT');
@@ -11,14 +12,16 @@ export const Lobby = () => {
   const [selectedProfIndex, setSelectedProfIndex] = useState(0);
   const [selectedDreamIndex, setSelectedDreamIndex] = useState(0);
   const [roomCode, setRoomCode] = useState<string | null>(null);
-  const { addPlayer, setMyPlayerId } = useGameStore();
+  const { addPlayer, setMyPlayerId, startGame, players, myPlayerId } = useGameStore();
+  const isHost = myPlayerId?.startsWith('host-');
 
   const currentProf = PROFESSIONS[selectedProfIndex];
   const currentDream = DREAMS[selectedDreamIndex];
 
   const handleStartLocal = () => {
-    setMyPlayerId('LOCAL'); // In local mode, we own all players
+    setMyPlayerId('LOCAL'); 
     addPlayer(name || 'Player 1', '#FF5A5F', currentProf, currentDream.id);
+    startGame();
   };
 
   const handleCreateOnline = async () => {
@@ -30,30 +33,97 @@ export const Lobby = () => {
     setRoomCode(code);
   };
 
-  const handleJoinOnline = () => {
+  const handleJoinOnline = async () => {
     if (!joinCode) return;
     const playerId = `guest-${Date.now()}`;
+    const code = joinCode.toUpperCase();
     
-    // Join first to get the current state
-    joinMultiplayerGame(joinCode.toUpperCase());
+    // 1. Join the sync cycle first
+    joinMultiplayerGame(code);
     
-    // Then add ourselves after a brief delay to ensure we are part of the next sync cycle
-    setTimeout(() => {
-      setMyPlayerId(playerId);
-      addPlayer(name || 'Guest', '#38A169', currentProf, currentDream.id, false, playerId);
-    }, 1000);
+    // 2. Set local ID
+    setMyPlayerId(playerId);
+
+    // 3. Create the player object
+    const newPlayer = {
+      id: playerId,
+      name: name || 'Guest',
+      color: '#38A169',
+      profession: currentProf,
+      dreamId: currentDream.id,
+      phase: 'RAT_RACE' as const,
+      position: 0,
+      isBankrupt: false,
+      lostTurns: 0,
+      fastTrackCashflow: 0,
+      fastTrackTarget: 0,
+      fastTrackBusinesses: [],
+      hasBoughtDream: false,
+      charityTurnsRemaining: 0,
+      isBot: false,
+      statement: {
+        salary: currentProf.salary,
+        passiveIncome: 0,
+        totalIncome: currentProf.salary,
+        taxes: currentProf.taxes,
+        homeMortgagePayment: currentProf.mortgagePayment,
+        schoolLoanPayment: currentProf.schoolLoanPayment,
+        carLoanPayment: currentProf.carLoanPayment,
+        creditCardPayment: currentProf.creditCardPayment,
+        retailPayment: currentProf.retailDebtPayment,
+        otherExpenses: currentProf.otherExpenses,
+        childExpenses: 0,
+        bankLoanPayment: 0,
+        totalExpenses: 0,
+        monthlyCashFlow: 0,
+        cash: currentProf.savings,
+        children: 0,
+        assets: [],
+        liabilities: [
+          { id: 'mortgage', name: 'Home Mortgage', amount: currentProf.mortgage, payment: currentProf.mortgagePayment },
+          { id: 'school', name: 'School Loans', amount: currentProf.schoolLoan, payment: currentProf.schoolLoanPayment },
+          { id: 'car', name: 'Car Loans', amount: currentProf.carLoan, payment: currentProf.carLoanPayment },
+          { id: 'credit', name: 'Credit Card', amount: currentProf.creditCard, payment: currentProf.creditCardPayment },
+          { id: 'retail', name: 'Retail Debt', amount: currentProf.retailDebt, payment: currentProf.retailDebtPayment },
+        ].filter(l => l.amount > 0)
+      }
+    };
+    
+    // @ts-ignore - Ensure perfect math
+    newPlayer.statement = recalculateStatement(newPlayer.statement, currentProf);
+
+    // 4. Add to Firebase safely
+    // @ts-ignore
+    await addPlayerToOnlineGame(code, newPlayer);
   };
 
-  if (roomCode) {
+  if (roomCode || (mode === 'ONLINE' && players.length > 0)) {
     return (
       <div className="lobby-overlay">
         <div className="glass-panel room-created-card animate-pop">
-          <h1 className="gold-text">Room Created!</h1>
+          <h1 className="gold-text">{roomCode ? 'Room Created!' : 'Joined Room'}</h1>
           <div className="room-code-display">
-            {roomCode}
+            {roomCode || joinCode}
           </div>
           <p className="pencil-text">Share this code with your friends to play together.</p>
-          <div className="waiting-indicator animate-pulse">WAITING FOR PLAYERS...</div>
+          
+          <div className="player-list-lobby">
+            <h3 className="selector-label">Players Joined</h3>
+            {players.map(p => (
+              <div key={p.id} className="player-lobby-row" style={{ color: p.color }}>
+                <span className="player-dot" style={{ backgroundColor: p.color }} />
+                {p.name} {p.id === myPlayerId ? '(You)' : ''}
+              </div>
+            ))}
+          </div>
+
+          {isHost ? (
+            <button className="btn btn-primary start-btn animate-pulse" onClick={startGame}>
+              START GAME
+            </button>
+          ) : (
+            <div className="waiting-indicator animate-pulse">WAITING FOR HOST TO START...</div>
+          )}
         </div>
       </div>
     );
@@ -146,6 +216,7 @@ export const Lobby = () => {
                 const botProf = PROFESSIONS[Math.floor(Math.random() * PROFESSIONS.length)];
                 const botDream = DREAMS[Math.floor(Math.random() * DREAMS.length)];
                 addPlayer('Bot Alpha', '#38A169', botProf, botDream.id, true);
+                startGame();
               }}
               disabled={!name.trim()}
               title={!name.trim() ? "Please enter your name first" : ""}

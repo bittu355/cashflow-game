@@ -6,7 +6,9 @@ const AUDIO_ASSETS = {
   error: 'https://assets.mixkit.co/sfx/preview/mixkit-negative-tone-interface-608.mp3',
   win: 'https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3',
   news: 'https://assets.mixkit.co/sfx/preview/mixkit-urgent-breaking-news-notification-3103.mp3',
-  bgm: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' // Placeholder Lounge Music
+  buy: 'https://assets.mixkit.co/sfx/preview/mixkit-register-purchase-607.mp3',
+  sell: 'https://assets.mixkit.co/sfx/preview/mixkit-coins-handling-1939.mp3',
+  bgm: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
 };
 
 class AudioController {
@@ -19,7 +21,9 @@ class AudioController {
     // Preload common SFX
     Object.entries(AUDIO_ASSETS).forEach(([key, url]) => {
       if (key !== 'bgm') {
-        const audio = new Audio(url);
+        const audio = new Audio();
+        audio.crossOrigin = "anonymous";
+        audio.src = url;
         audio.preload = 'auto';
         this.audioCache.set(key, audio);
       }
@@ -46,7 +50,9 @@ class AudioController {
 
   public playBGM() {
     if (this.bgmPlayer) return;
-    this.bgmPlayer = new Audio(AUDIO_ASSETS.bgm);
+    this.bgmPlayer = new Audio();
+    this.bgmPlayer.crossOrigin = "anonymous";
+    this.bgmPlayer.src = AUDIO_ASSETS.bgm;
     this.bgmPlayer.loop = true;
     this.bgmPlayer.volume = 0.3;
     if (!this.isMuted) {

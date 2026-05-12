@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import type { Asset, Player } from '../types/game';
 import { getEventTip } from '../data/tips';
+import { hapticFeedback } from '../utils/haptics';
+import { gameAudio } from '../utils/audio';
 
 export const CardModal = () => {
   const { activeCard, players, currentPlayerIndex, resolveCard, buyAsset, sellAsset, handleMarketEvent, transferDeal, payCash, myPlayerId } = useGameStore();
@@ -34,15 +36,40 @@ export const CardModal = () => {
       );
     }
 
-    // Find ALL players with eligible assets (for Global Market Events)
     const playersWithAssets = players.map((p: any) => ({
       player: p,
       assets: p.statement.assets.filter((a: any) => {
         if (!activeCard.assetType) return false;
-        if (activeCard.assetType === 'REAL_ESTATE') {
-          return a.type === 'REAL_ESTATE' && activeCard.description.toLowerCase().includes(a.name.split(' ')[0].toLowerCase());
+        
+        const titleLower = activeCard.title.toLowerCase();
+        const descLower = activeCard.description.toLowerCase();
+        const assetNameLower = a.name.toLowerCase();
+
+        // 1. Match by Asset Type
+        if (a.type !== activeCard.assetType) return false;
+
+        // 2. Specific matching for Real Estate (Apartments, Plexes, etc.)
+        if (a.type === 'REAL_ESTATE') {
+           // Match if the card title or description contains the asset name (or vice versa)
+           // Example: "Apartment House" matches "12 Unit Apartment"
+           const keywords = ['apartment', 'plex', 'condo', 'house', 'mall', 'plex'];
+           for (const word of keywords) {
+             if (titleLower.includes(word) && assetNameLower.includes(word)) return true;
+             if (descLower.includes(word) && assetNameLower.includes(word)) return true;
+           }
+           return titleLower.includes(assetNameLower) || assetNameLower.includes(titleLower);
         }
-        return a.type === activeCard.assetType && (activeCard.title.includes(a.name) || a.name.includes(activeCard.title.split(' ')[0]));
+
+        // 3. Specific matching for Stocks
+        if (a.type === 'STOCK') {
+           // Match symbols (e.g. "MYT")
+           const symbolMatch = activeCard.title.match(/\(([A-Z]+)\)/) || activeCard.title.match(/^([A-Z0-9]+)\s/);
+           const symbol = symbolMatch ? symbolMatch[1] : activeCard.title.split(' ')[0];
+           return assetNameLower.includes(symbol.toLowerCase()) || titleLower.includes(assetNameLower);
+        }
+
+        // 4. Default fuzzy match
+        return titleLower.includes(assetNameLower) || assetNameLower.includes(titleLower) || descLower.includes(assetNameLower);
       })
     })).filter((entry: any) => entry.assets.length > 0);
 
@@ -76,7 +103,6 @@ export const CardModal = () => {
                     disabled={!isOwner}
                     onClick={() => {
                       sellAsset(entry.player.id, a.id, price);
-                      if (activeCard.assetType !== 'STOCK') resolveCard(); 
                     }}
                   >
                     {isOwner ? `Sell for $${price.toLocaleString()}` : 'Owner Action'}
@@ -97,7 +123,7 @@ export const CardModal = () => {
 
   return (
     <div className="modal-overlay animate-fade-in">
-      <div className="card-container glass-panel animate-slide-up" data-type={activeCard.type}>
+      <div className="card-container glass-panel animate-card-reveal" data-type={activeCard.type}>
         <div className="card-header">
           <div className="card-badge">{activeCard.type.replace('_', ' ')}</div>
           <h2 className="card-title">{activeCard.title}</h2>
@@ -138,6 +164,10 @@ export const CardModal = () => {
                 onClick={() => {
                   if (activeCard.type === 'DOODAD') {
                     payCash(player.id, activeCard.cost || 0); 
+                    hapticFeedback.error();
+                    gameAudio.playSFX('sell');
+                  } else {
+                    hapticFeedback.light();
                   }
                   resolveCard();
                 }}
@@ -145,29 +175,40 @@ export const CardModal = () => {
                 {activeCard.type === 'DOODAD' ? `Pay $${(activeCard.cost || 0).toLocaleString()}` : 'Pass'}
               </button>
               
-              <button 
-                className="btn btn-primary flex-1"
-                onClick={() => {
-                  const cost = activeCard.assetType === 'STOCK' ? (activeCard.cost! * sharesToBuy) : (activeCard.downPayment || activeCard.cost || 0);
-                  if (player.statement.cash >= cost) {
-                    buyAsset(player.id, {
-                      id: `asset-${Date.now()}`,
-                      name: activeCard.assetType === 'STOCK' ? `${activeCard.title.split(':')[1]?.trim() || activeCard.title} (${sharesToBuy})` : activeCard.title,
-                      type: activeCard.assetType || 'BUSINESS',
-                      cost: activeCard.cost || 0,
-                      downPayment: activeCard.downPayment || activeCard.cost || 0,
-                      cashflow: activeCard.cashflow || 0,
-                      shares: activeCard.assetType === 'STOCK' ? sharesToBuy : undefined,
-                      dividend: activeCard.assetType === 'STOCK' ? activeCard.cashflow : undefined
-                    });
-                    resolveCard();
-                  } else {
-                    alert('Not enough cash! Borrow from bank.');
-                  }
-                }}
-              >
-                {activeCard.actionText || 'Buy'}
-              </button>
+              <div className="action-wrapper flex-1">
+                {activeCard.type !== 'DOODAD' && (
+                  <div className="ghost-impact-preview animate-float">
+                    <span className="impact-badge income">+{activeCard.cashflow?.toLocaleString() || 0} Flow</span>
+                    <span className="impact-badge cash">-${(activeCard.assetType === 'STOCK' ? activeCard.cost! * sharesToBuy : activeCard.downPayment || activeCard.cost || 0).toLocaleString()}</span>
+                  </div>
+                )}
+                <button 
+                  className="btn btn-primary"
+                  style={{ width: '100%' }}
+                  onClick={() => {
+                    const cost = activeCard.assetType === 'STOCK' ? (activeCard.cost! * sharesToBuy) : (activeCard.downPayment || activeCard.cost || 0);
+                    if (player.statement.cash >= cost) {
+                      buyAsset(player.id, {
+                        id: `asset-${Date.now()}`,
+                        name: activeCard.assetType === 'STOCK' ? `${activeCard.title.split(':')[1]?.trim() || activeCard.title} (${sharesToBuy})` : activeCard.title,
+                        type: activeCard.assetType || 'BUSINESS',
+                        cost: activeCard.cost || 0,
+                        downPayment: activeCard.downPayment || activeCard.cost || 0,
+                        cashflow: activeCard.cashflow || 0,
+                        shares: activeCard.assetType === 'STOCK' ? sharesToBuy : undefined,
+                        dividend: activeCard.assetType === 'STOCK' ? activeCard.cashflow : undefined
+                      });
+                      hapticFeedback.success();
+                      gameAudio.playSFX('buy');
+                      resolveCard();
+                    } else {
+                      alert('Not enough cash! Borrow from bank.');
+                    }
+                  }}
+                >
+                  {activeCard.actionText || 'Confirm Deal'}
+                </button>
+              </div>
             </>
           )}
         </div>
@@ -225,26 +266,64 @@ export const CardModal = () => {
           display: flex; align-items: center; justify-content: center; z-index: 2000;
         }
         .card-container {
-          background: var(--color-bg-card); width: 380px; padding: 2rem; border-radius: 24px;
-          border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+          background: rgba(15, 15, 20, 0.9);
+          width: 90%;
+          max-width: 400px;
+          padding: 2rem;
+          border-radius: 32px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+          position: relative;
+          overflow: hidden;
         }
-        .card-container[data-type="SMALL_DEAL"] { border-top: 8px solid var(--color-success); }
-        .card-container[data-type="BIG_DEAL"] { border-top: 8px solid var(--color-primary); }
-        .card-container[data-type="MARKET"] { border-top: 8px solid var(--color-blue); }
-        .card-container[data-type="DOODAD"] { border-top: 8px solid var(--color-danger); }
 
-        .card-badge { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--color-text-muted); font-weight: 800; }
-        .card-title { font-size: 1.6rem; margin-top: 0.2rem; margin-bottom: 1rem; color: var(--color-text-main); }
-        .card-description { font-size: 0.95rem; line-height: 1.6; color: var(--color-text-muted); margin-bottom: 1.5rem; }
+        .action-wrapper {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .ghost-impact-preview {
+          position: absolute;
+          top: -35px;
+          left: 0;
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          gap: 0.5rem;
+          pointer-events: none;
+        }
+
+        .impact-badge {
+          font-size: 0.6rem;
+          font-weight: 900;
+          padding: 2px 8px;
+          border-radius: 100px;
+          text-transform: uppercase;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .impact-badge.income { background: var(--color-success); color: #fff; }
+        .impact-badge.cash { background: var(--color-danger); color: #fff; }
+
+        .card-container[data-type="SMALL_DEAL"] { border-top: 12px solid var(--color-success); }
+        .card-container[data-type="BIG_DEAL"] { border-top: 12px solid var(--color-primary); }
+        .card-container[data-type="MARKET"] { border-top: 12px solid var(--color-blue); }
+        .card-container[data-type="DOODAD"] { border-top: 12px solid var(--color-danger); }
+
+        .card-badge { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 3px; color: var(--color-primary); font-weight: 900; margin-bottom: 0.5rem; }
+        .card-title { font-size: 1.8rem; line-height: 1.2; margin-bottom: 1rem; color: #fff; font-family: var(--font-heading); }
+        .card-description { font-size: 1rem; line-height: 1.6; color: rgba(255,255,255,0.7); margin-bottom: 1.5rem; }
         
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 0.8rem; font-weight: 800; font-size: 1.1rem; }
         .stat-row.success { color: var(--color-success); }
         
-        .stock-buy-input { background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 12px; margin-bottom: 1rem; }
-        .stock-buy-input input { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; width: 60px; margin-left: 0.5rem; padding: 0.2rem; border-radius: 4px; }
-        .total-cost { margin-top: 0.5rem; font-weight: 800; color: var(--color-primary); font-size: 1.1rem; }
+        .stock-buy-input { background: rgba(255,255,255,0.03); padding: 1.2rem; border-radius: 16px; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.05); }
+        .stock-buy-input input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; width: 80px; margin-left: 0.8rem; padding: 0.4rem; border-radius: 8px; font-weight: 800; }
+        .total-cost { margin-top: 0.8rem; font-weight: 900; color: var(--color-primary); font-size: 1.2rem; }
 
-        .card-actions { display: flex; gap: 1rem; margin-top: 1rem; }
+        .card-actions { display: flex; gap: 1rem; margin-top: 2rem; }
         .flex-1 { flex: 1; }
 
         .asset-sell-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.85rem; }

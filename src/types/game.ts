@@ -111,6 +111,7 @@ export interface GameState {
   winner: string | null;
   history: TransactionRecord[];
   isRolling: boolean;
+  gameStarted: boolean;
   
   // Helpers
   addPlayer: (name: string, color: string, profession: Profession, dreamId?: string, isBot?: boolean, customId?: string) => void;
@@ -160,4 +161,5 @@ export interface GameState {
   
   // Canonical payCash utility
   payCash: (playerId: string, amount: number) => void;
+  startGame: () => void;
 }
