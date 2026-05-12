@@ -34,8 +34,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 }
 
 function App() {
-  const { players, gameStarted } = useGameStore(state => ({ 
-    players: state.players, 
+  const { gameStarted } = useGameStore(state => ({ 
     gameStarted: state.gameStarted 
   }));
 

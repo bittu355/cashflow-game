@@ -11,6 +11,9 @@ export const FastTrackBoard = () => {
     pendingPaydays, collectPayday,
     isRolling, setRolling, myPlayerId
   } = useGameStore();
+  const { gameStarted } = useGameStore(state => ({ 
+    gameStarted: state.gameStarted 
+  }));
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
@@ -174,11 +177,11 @@ export const FastTrackBoard = () => {
                           }}>BUY DREAM</button>
                         )}
                         
-                        {(FAST_TRACK_SPACES[currentPlayer.position].id === 'tax-audit' || 
-                          FAST_TRACK_SPACES[currentPlayer.position].id === 'lawsuit' || 
-                          FAST_TRACK_SPACES[currentPlayer.position].id === 'divorce') && (
+                        {(FAST_TRACK_SPACES[currentPlayer.position].type === 'TAX_AUDIT' || 
+                          FAST_TRACK_SPACES[currentPlayer.position].type === 'LAWSUIT' || 
+                          FAST_TRACK_SPACES[currentPlayer.position].type === 'DIVORCE') && (
                           <button className="btn btn-danger btn-pop" onClick={() => {
-                            const type = FAST_TRACK_SPACES[currentPlayer.position].id.replace('-', '_').toUpperCase() as any;
+                            const type = FAST_TRACK_SPACES[currentPlayer.position].type as any;
                             useGameStore.getState().resolveFastTrackPenalty(currentPlayer.id, type);
                             endTurn();
                           }}>RESOLVE {FAST_TRACK_SPACES[currentPlayer.position].label}</button>

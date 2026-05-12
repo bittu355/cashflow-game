@@ -77,9 +77,8 @@ export const playBotTurn = async (playerId: string) => {
        if (bot.statement.cash >= 100000) {
          state.buyDream(playerId, 100000);
        }
-    } else if (space.id === 'tax-audit' || space.id === 'lawsuit' || space.id === 'divorce') {
-       const type = space.id.replace('-', '_').toUpperCase() as any;
-       state.resolveFastTrackPenalty(playerId, type);
+    } else if (space.type === 'TAX_AUDIT' || space.type === 'LAWSUIT' || space.type === 'DIVORCE') {
+       state.resolveFastTrackPenalty(playerId, space.type);
     }
     
     if (state.pendingPaydays > 0) {
