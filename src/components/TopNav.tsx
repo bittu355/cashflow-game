@@ -1,11 +1,20 @@
 import { useGameStore } from '../store/gameStore';
 import { gameAudio } from '../utils/audio';
 import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
 export const TopNav = () => {
   const { 
-    players, currentPlayerIndex, turnCount, resetGame 
-  } = useGameStore();
+    players, currentPlayerIndex, turnCount, 
+    activeMacroEvent, resetGame, myPlayerId 
+  } = useGameStore(useShallow(state => ({
+    players: state.players,
+    currentPlayerIndex: state.currentPlayerIndex,
+    turnCount: state.turnCount,
+    activeMacroEvent: state.activeMacroEvent,
+    resetGame: state.resetGame,
+    myPlayerId: state.myPlayerId
+  })));
   const [isMuted, setIsMuted] = useState(false);
 
   const currentPlayer = players[currentPlayerIndex];

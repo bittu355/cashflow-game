@@ -1,8 +1,12 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export const FreedomMeter: React.FC = () => {
-  const { players, currentPlayerIndex } = useGameStore();
+  const { players, currentPlayerIndex } = useGameStore(useShallow(state => ({
+    players: state.players,
+    currentPlayerIndex: state.currentPlayerIndex
+  })));
   const player = players[currentPlayerIndex];
 
   if (!player || player.phase === 'FAST_TRACK') return null;

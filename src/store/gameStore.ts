@@ -925,9 +925,9 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: 'cashflow-game-storage',
+      version: 1, // Bump version to clear old incompatible state
       storage: createJSONStorage(() => {
         try {
-          // Check if localStorage is available and working
           const testKey = '__test__';
           window.localStorage.setItem(testKey, testKey);
           window.localStorage.removeItem(testKey);
@@ -937,6 +937,13 @@ export const useGameStore = create<GameState>()(
           return window.sessionStorage;
         }
       }),
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0) {
+          // Clear everything for version 0 users to prevent #185 loops
+          return {};
+        }
+        return persistedState;
+      }
     }
   )
 );

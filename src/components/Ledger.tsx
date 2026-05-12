@@ -5,8 +5,17 @@ import { DREAMS } from '../data/fastTrack';
 import { AuditLog } from './AuditLog';
 import { FinancialControls } from './FinancialControls';
 
+import { useShallow } from 'zustand/react/shallow';
+
 export const Ledger = () => {
-  const { players, currentPlayerIndex, haveChild, enterFastTrack, resetGame, myPlayerId } = useGameStore();
+  const { players, currentPlayerIndex, haveChild, enterFastTrack, resetGame, myPlayerId } = useGameStore(useShallow(state => ({
+    players: state.players,
+    currentPlayerIndex: state.currentPlayerIndex,
+    haveChild: state.haveChild,
+    enterFastTrack: state.enterFastTrack,
+    resetGame: state.resetGame,
+    myPlayerId: state.myPlayerId
+  })));
   const player = players[currentPlayerIndex];
   const isMyTurn = myPlayerId === 'LOCAL' || player?.id === myPlayerId;
   const [isBankModalOpen, setBankModalOpen] = useState(false);
