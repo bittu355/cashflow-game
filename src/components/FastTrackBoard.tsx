@@ -11,9 +11,6 @@ export const FastTrackBoard = () => {
     pendingPaydays, collectPayday,
     isRolling, setRolling, myPlayerId
   } = useGameStore();
-  const { gameStarted } = useGameStore(state => ({ 
-    gameStarted: state.gameStarted 
-  }));
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
