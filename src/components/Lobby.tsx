@@ -15,10 +15,11 @@ export const Lobby = () => {
   const { addPlayer, setMyPlayerId, startGame, players, myPlayerId } = useGameStore();
   const isHost = myPlayerId?.startsWith('host-');
 
-  const currentProf = PROFESSIONS[selectedProfIndex];
-  const currentDream = DREAMS[selectedDreamIndex];
+  const currentProf = PROFESSIONS[selectedProfIndex] || PROFESSIONS[0];
+  const currentDream = DREAMS[selectedDreamIndex] || DREAMS[0];
 
   const handleStartLocal = () => {
+    if (!currentProf || !currentDream) return;
     setMyPlayerId('LOCAL'); 
     addPlayer(name || 'Player 1', '#FF5A5F', currentProf, currentDream.id);
     startGame();

@@ -133,6 +133,7 @@ export interface GameState {
   donateToCharity: (playerId: string) => void;
   goDownsized: (playerId: string) => void;
   resetGame: () => void;
+  deepClean: () => void;
   
   // Fast Track Actions
   enterFastTrack: (playerId: string) => void;

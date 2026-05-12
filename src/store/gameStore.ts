@@ -36,9 +36,13 @@ export const useGameStore = create<GameState>()(
         set((state) => ({
           history: [
             { ...record, id: `hist-${Date.now()}-${Math.random()}`, timestamp: Date.now() },
-            ...state.history.slice(0, 49) // Keep last 50 records
+            ...(state.history || []).slice(0, 49)
           ]
         }));
+      },
+      deepClean: () => {
+        localStorage.clear();
+        window.location.reload();
       },
 
       addPlayer: (name: string, color: string, profession: Profession, dreamId: string = 'yacht', isBot: boolean = false, customId?: string) => {
