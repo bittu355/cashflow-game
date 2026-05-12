@@ -44,9 +44,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 }
 
 const GameContent = () => {
-  const { gameStarted } = useGameStore(state => ({ 
-    gameStarted: state.gameStarted 
-  }));
+  const gameStarted = useGameStore(state => state.gameStarted);
 
   if (!hasValidConfig) {
     return (

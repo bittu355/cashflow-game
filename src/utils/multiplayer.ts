@@ -75,9 +75,7 @@ export const joinMultiplayerGame = (gameId: string) => {
         gameStarted: data.gameStarted ?? state.gameStarted
       }));
       
-      setTimeout(() => {
-        isSyncingFromFirebase = false;
-      }, 50);
+      isSyncingFromFirebase = false;
     }
   });
 

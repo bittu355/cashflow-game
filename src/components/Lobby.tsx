@@ -12,7 +12,7 @@ export const Lobby = () => {
   const [selectedProfIndex, setSelectedProfIndex] = useState(0);
   const [selectedDreamIndex, setSelectedDreamIndex] = useState(0);
   const [roomCode, setRoomCode] = useState<string | null>(null);
-  const { addPlayer, setMyPlayerId, startGame, players, myPlayerId } = useGameStore();
+  const { addPlayer, setMyPlayerId, startGame, players = [], myPlayerId } = useGameStore();
   const isHost = myPlayerId?.startsWith('host-');
 
   const currentProf = PROFESSIONS[selectedProfIndex] || PROFESSIONS[0];
